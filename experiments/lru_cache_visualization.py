@@ -313,9 +313,8 @@ class LRUVisualizer:
                 f"move it to front (now MRU). O(1)."
             )
 
-    def _next_pending(self) -> None:
-        if not self.pending:
-            self._set_status("Demo complete. Front = MRU, back = LRU. Every step was O(1).")
+    def _process_next(self) -> None:
+        if self.animating or not self.pending:
             return
         op = self.pending.pop(0)
         self._apply(op)
