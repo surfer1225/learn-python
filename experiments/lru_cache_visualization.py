@@ -201,22 +201,24 @@ class LRUVisualizer:
 
     # -- button handlers ----------------------------------------------------
     def on_put(self) -> None:
-        if self.animating:
-            return
         key, value = self._read_int(self.key_entry), self._read_int(self.val_entry)
         if key is None or value is None:
             self._set_status("Enter integer key AND value for Put.")
             return
-        self._apply(("put", key, value))
+        self._enqueue(("put", key, value))
 
     def on_get(self) -> None:
-        if self.animating:
-            return
         key = self._read_int(self.key_entry)
         if key is None:
             self._set_status("Enter an integer key for Get.")
             return
-        self._apply(("get", key))
+        self._enqueue(("get", key))
+
+    def _enqueue(self, op: tuple) -> None:
+        """Queue an operation so clicks during an animation are honored, not dropped."""
+        self.pending.append(op)
+        if not self.animating:
+            self._process_next()
 
     def run_demo(self) -> None:
         if self.animating or self.pending:
