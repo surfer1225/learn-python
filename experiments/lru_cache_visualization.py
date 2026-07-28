@@ -237,8 +237,10 @@ class LRUVisualizer:
         self.root.after(DEMO_PAUSE_MS, self._process_next)
 
     def reset(self, capacity: int | None = None) -> None:
+        self.pending.clear()
+        self.demo_running = False
         if self.animating:
-            return
+            return  # halt any demo; cache rebuilds once the current animation ends
         if capacity is not None:
             self.capacity = capacity
             self.cap_spin.delete(0, "end")
