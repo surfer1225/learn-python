@@ -153,7 +153,8 @@ class LRUVisualizer:
         self.highlight: dict[Node, str] = {}   # node -> fill color this op
         self.active_key: int | None = None     # draws map->node connector
         self.animating = False
-        self.pending: list[tuple] = []         # queued demo operations
+        self.pending: list[tuple] = []         # queued operations (clicks + demo)
+        self.demo_running = False
 
         self.canvas = tk.Canvas(root, width=CANVAS_W, height=CANVAS_H, bg="white", highlightthickness=0)
         self.canvas.pack()
