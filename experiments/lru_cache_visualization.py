@@ -224,6 +224,7 @@ class LRUVisualizer:
         if self.animating or self.pending:
             return
         self.reset(capacity=3)
+        self.demo_running = True
         self.pending = [
             ("put", 1, 10), ("put", 2, 20), ("put", 3, 30),
             ("get", 1),                      # hit -> 1 becomes MRU
@@ -233,7 +234,7 @@ class LRUVisualizer:
             ("get", 4),                      # hit
             ("put", 5, 50),                  # evicts LRU
         ]
-        self.root.after(DEMO_PAUSE_MS, self._next_pending)
+        self.root.after(DEMO_PAUSE_MS, self._process_next)
 
     def reset(self, capacity: int | None = None) -> None:
         if self.animating:
