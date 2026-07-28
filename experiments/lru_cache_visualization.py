@@ -356,7 +356,11 @@ class LRUVisualizer:
             self.leaving.clear()
             self.animating = False
             if self.pending:
-                self.root.after(DEMO_PAUSE_MS, self._next_pending)
+                delay = DEMO_PAUSE_MS if self.demo_running else 90
+                self.root.after(delay, self._process_next)
+            elif self.demo_running:
+                self.demo_running = False
+                self._set_status("Demo complete. Front = MRU, back = LRU. Every step was O(1).")
 
     # -- drawing ------------------------------------------------------------
     def _render(self) -> None:
