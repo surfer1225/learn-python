@@ -2,6 +2,8 @@
 
 A workspace for learning Python and practicing interview-style problems.
 
+📚 **[STUDY_PLAN.md](STUDY_PLAN.md)** — the 12-week backend SWE interview prep plan (topics, problems, progress).
+
 ## Getting started
 
 ```bash
