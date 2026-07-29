@@ -9,13 +9,13 @@ from typing import List
 
 
 def two_sum(nums: List[int], target: int) -> List[int]:
-    map = {}
+    seen = {}  # value -> index
     for i, num in enumerate(nums):
         complement = target - num
-        if complement in map:
-            return [map[complement], i]
-        map[num] = i
-    raise NotImplementedError
+        if complement in seen:
+            return [seen[complement], i]
+        seen[num] = i
+    return []  # LeetCode guarantees exactly one solution; unreachable
 
 
 if __name__ == "__main__":
