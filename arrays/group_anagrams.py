@@ -3,13 +3,15 @@ https://leetcode.com/problems/group-anagrams/
 
 Given an array of strings `strs`, group the anagrams together.
 """
-
+from collections import defaultdict
 from typing import List
 
 
 def group_anagrams(strs: List[str]) -> List[List[str]]:
-    # TODO: implement
-    raise NotImplementedError
+    groups: defaultdict[str, List[str]] = defaultdict(list)
+    for s in strs:
+        groups["".join(sorted(s))].append(s)
+    return list(groups.values())
 
 
 if __name__ == "__main__":
