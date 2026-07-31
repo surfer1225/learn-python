@@ -4,13 +4,20 @@ https://leetcode.com/problems/group-anagrams/
 Given an array of strings `strs`, group the anagrams together.
 """
 from collections import defaultdict
-from typing import List
 
 
-def group_anagrams(strs: List[str]) -> List[List[str]]:
-    groups: defaultdict[str, List[str]] = defaultdict(list)
-    for s in strs:
-        groups["".join(sorted(s))].append(s)
+def group_anagrams(strs: list[str]) -> list[list[str]]:
+    """Group words sharing the same character multiset.
+
+    The sorted string is a canonical form of that multiset, so two words are
+    anagrams iff their sorted forms are equal.
+
+    Time: O(n * k log k) — sorting each of n words of length k.
+    Space: O(n * k) — n keys of k characters, plus n references in the values.
+    """
+    groups: defaultdict[str, list[str]] = defaultdict(list)
+    for word in strs:
+        groups["".join(sorted(word))].append(word)
     return list(groups.values())
 
 
