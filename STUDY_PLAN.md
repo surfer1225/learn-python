@@ -59,49 +59,43 @@ Write Python like an experienced backend engineer.
 ---
 
 ## Phase 2 — Algorithms & data structures (Weeks 3–5)
-~50 high-value problems by **pattern**. Repo problems below; add the "stretch" ones to hit ~50.
 
-### Arrays & HashMap (`arrays/`)  — trade space for time
-- [x] [Two Sum](https://leetcode.com/problems/two-sum/) — `arrays/two_sum.py`
-- [ ] [Group Anagrams](https://leetcode.com/problems/group-anagrams/) — char-count key
-- [ ] [Product of Array Except Self](https://leetcode.com/problems/product-of-array-except-self/) — prefix × suffix
-- [ ] [Top K Frequent Elements](https://leetcode.com/problems/top-k-frequent-elements/) — heap / bucket sort
-- [ ] *stretch:* Valid Anagram, Contains Duplicate, Longest Consecutive Sequence
+**The full question bank lives in [QUESTIONS.md](QUESTIONS.md)** — 144 problems
+across 15 patterns, each a runnable stub with the statement, a worked example,
+and self-checks.
 
-### Two Pointers & Sliding Window (`sliding_window/`)
-- [ ] [Longest Substring Without Repeating Characters](https://leetcode.com/problems/longest-substring-without-repeating-characters/)
-- [ ] [Minimum Window Substring](https://leetcode.com/problems/minimum-window-substring/) *(hard)*
-- [ ] [Sliding Window Maximum](https://leetcode.com/problems/sliding-window-maximum/) — monotonic `deque` *(hard)*
-- [ ] *stretch:* Two Sum II, 3Sum, Container With Most Water, Trapping Rain Water
+Every pattern folder is split by priority:
 
-### Stack / Heap / Intervals  *(new bucket to add)*
-- [ ] *stretch:* Valid Parentheses, Min Stack, Daily Temperatures, Merge Intervals, Kth Largest (heap), Find Median from Data Stream
+| Tier | Meaning | Count |
+| --- | --- | --- |
+| **Tier 1** | Must prepare — the core set | 60 |
+| **Tier 2** | Good to prepare — common follow-ups | 56 |
+| **Tier 3** | Prepare if you have time — hard or niche | 28 |
 
-### Binary Search  *(new bucket to add)*
-- [ ] *stretch:* Binary Search, Search in Rotated Sorted Array, Koko Eating Bananas, Median of Two Sorted Arrays
+```
+arrays/tier1/two_sum.py          # topic first, then tier
+graphs/tier2/rotting_oranges.py
+```
 
-### Trees (`trees/`) — DFS recursion + BFS queue
-- [ ] [Validate BST](https://leetcode.com/problems/validate-binary-search-tree/) — bounds
-- [ ] [Level Order Traversal](https://leetcode.com/problems/binary-tree-level-order-traversal/) — BFS
-- [ ] [Lowest Common Ancestor](https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-tree/) — post-order
-- [ ] [Serialize/Deserialize Binary Tree](https://leetcode.com/problems/serialize-and-deserialize-binary-tree/) *(hard)*
-- [ ] *stretch:* Max Depth, Invert Tree, Diameter, Kth Smallest in BST
+**Order:** finish **Tier 1 across every pattern** before starting Tier 2.
+Breadth beats depth for interview coverage, and the patterns reinforce each
+other. Tier 3 is for after Tiers 1–2 are solid.
 
-### Graphs (`graphs/`) — BFS/DFS + topological sort
-- [ ] [Clone Graph](https://leetcode.com/problems/clone-graph/)
-- [ ] [Course Schedule](https://leetcode.com/problems/course-schedule/) — topo sort
-- [ ] [Number of Islands](https://leetcode.com/problems/number-of-islands/) — flood fill
-- [ ] [Word Ladder](https://leetcode.com/problems/word-ladder/) — BFS shortest path *(hard)*
-- [ ] *stretch:* Pacific Atlantic, Rotting Oranges, Union-Find (Redundant Connection)
+**Patterns:** Arrays & Hashing · Two Pointers · Sliding Window · Stack ·
+Binary Search · Linked List · Trees · Tries · Heap · Backtracking · Graphs ·
+Dynamic Programming · Intervals · Greedy · Math & Bits.
 
-### Trie (`trie/`)
-- [ ] [Implement Trie](https://leetcode.com/problems/implement-trie-prefix-tree/)
-- [ ] [Word Search II](https://leetcode.com/problems/word-search-ii/) *(hard)*
+**Per-question loop** (the sequencing is the skill, not just the answer):
+1. State the approach, its time/space complexity, and *why it is correct* —
+   before writing a line of code.
+2. Name the alternative approach and why you are not taking it.
+3. Then code it. Run the file; it prints `ok` when the assertions pass.
+4. Write the complexity into the function docstring. If you cannot, you have
+   not finished.
 
-### Dynamic Programming  *(new bucket to add)*
-- [ ] *stretch:* Climbing Stairs, House Robber, Coin Change, Longest Common Subsequence, Word Break, LIS
-
-- **Milestone (end Week 5):** ~50 problems solved, each with a one-line pattern note; can re-derive any solved one from scratch in <15 min.
+- **Milestone (end Week 5):** all 60 Tier 1 problems solved, each with a
+  complexity docstring; can re-derive any of them cold in <15 min while
+  narrating.
 
 ---
 
@@ -164,6 +158,6 @@ Backend building blocks behind AI apps.
 Wk0 tooling · Wk1–2 Python · Wk3–5 Algorithms (+start light mocks Wk4) · Wk6–8 Production coding · Wk9–10 System design · Wk11 AI infra · Wk12 Mocks.
 
 ## Progress
-Algorithms: **1 / 17** repo problems (~50 target)  ·  Production components: **2 / 8**
+Algorithms: **2 / 144** (Tier 1: **2 / 60**)  ·  Production components: **2 / 8**
 System designs: **0 / 7**  ·  Mocks done: **0**
 _(update as you go)_
