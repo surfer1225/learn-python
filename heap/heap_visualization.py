@@ -118,7 +118,7 @@ class Step:
         self.settled = settled
 
 
-def tree_position(index: int, count: int) -> tuple[float, float]:
+def tree_position(index: int) -> tuple[float, float]:
     """Where item `index` sits in the tree drawing.
 
     Depth is floor(log2(index + 1)); the slot within that level is
