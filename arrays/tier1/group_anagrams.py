@@ -1,8 +1,18 @@
 """Group Anagrams
 https://leetcode.com/problems/group-anagrams/
 
-Given an array of strings `strs`, group the anagrams together.
+Tier 1 — must prepare · Arrays & Hashing
+
+Given an array of strings `strs`, group the anagrams together. Return the groups
+in any order.
+
+Example:
+    Input:  ["eat", "tea", "tan", "ate", "nat", "bat"]
+    Output: [["bat"], ["nat", "tan"], ["ate", "eat", "tea"]]
+
+Run: python arrays/tier1/group_anagrams.py
 """
+
 from collections import defaultdict
 
 
