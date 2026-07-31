@@ -36,4 +36,7 @@ if __name__ == "__main__":
     assert sorted(sorted(g) for g in result) == sorted(
         sorted(g) for g in [["bat"], ["nat", "tan"], ["ate", "eat", "tea"]]
     )
+    assert group_anagrams([]) == []
+    assert group_anagrams([""]) == [[""]]
+    assert group_anagrams(["a"]) == [["a"]]
     print("ok")
