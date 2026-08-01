@@ -149,7 +149,10 @@ Backend building blocks behind AI apps.
 
 ---
 
-## Visual aids & experiments (`experiments/`)
+## Visual aids & experiments
+- `python heap/heap_visualization.py` — animated binary heap / priority queue:
+  tree and array views side by side, sift-up/sift-down narrated step by step 🎬
+  (`--selftest` verifies the model headlessly)
 - `python experiments/lru_cache_visualization.py` — animated LRU (hash map + DLL) 🎬
 - `python experiments/doubly_linked_list_animation.py` — the DLL behind LRU 🎬
 - `python experiments/pi_simulation.py` — Monte Carlo vs. Leibniz π

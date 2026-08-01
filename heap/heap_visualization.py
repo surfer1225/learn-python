@@ -356,6 +356,10 @@ def launch() -> None:
     root = tk.Tk()
     root.title("Binary Heap / Priority Queue")
     root.configure(bg=BG)
+    # Launched from a terminal the window otherwise opens behind it.
+    root.lift()
+    root.attributes("-topmost", True)
+    root.after(400, lambda: root.attributes("-topmost", False))
 
     canvas = tk.Canvas(root, width=CANVAS_W, height=CANVAS_H, bg=BG, highlightthickness=0)
     canvas.grid(row=0, column=0, columnspan=9, padx=10, pady=(10, 4))
@@ -366,7 +370,7 @@ def launch() -> None:
 
     def layout_targets(order: list[Item]) -> None:
         for index, item in enumerate(order):
-            tx, ty = tree_position(index, len(order))
+            tx, ty = tree_position(index)
             item.target = [tx, ty, array_position(index)]
 
     def snap(order: list[Item]) -> None:
@@ -476,6 +480,8 @@ def launch() -> None:
     def play_next() -> None:
         if not state["queue"]:
             state["playing"] = False
+            layout_targets(model.items)
+            snap(model.items)
             draw(model.items, None)
             return
         step = state["queue"].pop(0)
@@ -485,6 +491,8 @@ def launch() -> None:
 
     def animate(step: Step, frame: int) -> None:
         if frame > ANIM_FRAMES:
+            for item in step.order:  # land exactly on target, no drift
+                item.pos = list(item.target)
             draw(step.order, step)
             root.after(STEP_PAUSE_MS, play_next)
             return
@@ -616,8 +624,8 @@ def run_selftest() -> None:
 
     # index arithmetic matches the drawing: children sit one level below
     for index in range(1, MAX_ITEMS):
-        _, parent_y = tree_position((index - 1) // 2, MAX_ITEMS)
-        _, child_y = tree_position(index, MAX_ITEMS)
+        _, parent_y = tree_position((index - 1) // 2)
+        _, child_y = tree_position(index)
         assert child_y - parent_y == LEVEL_H, index
 
     # every step records a caption, so the narration can never go blank
