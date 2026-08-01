@@ -150,6 +150,8 @@ Backend building blocks behind AI apps.
 ---
 
 ## Visual aids & experiments
+- `python heap/heapify_walkthrough.py` — heapify one step at a time, paused by
+  default, with the executing line of code highlighted 🎬
 - `python heap/heap_visualization.py` — animated binary heap / priority queue:
   tree and array views side by side, sift-up/sift-down narrated step by step 🎬
   (`--selftest` verifies the model headlessly)
