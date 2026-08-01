@@ -46,25 +46,25 @@ import argparse
 import random
 
 # --- layout -----------------------------------------------------------------
-CANVAS_W, CANVAS_H = 1280, 786
+CANVAS_W, CANVAS_H = 1520, 786
 
 TREE_TOP = 118
 LEVEL_H = 86
-TREE_LEFT, TREE_RIGHT = 44, 872
+TREE_LEFT, TREE_RIGHT = 40, 852
 NODE_R = 25
 
 ARRAY_Y = 452
 CELL_W, CELL_H = 58, 44
 ARRAY_LEFT = 60
 
-CODE_LEFT = 906
+CODE_LEFT = 884
 CODE_TOP = 96
-CODE_LINE_H = 21
-CODE_RIGHT = 1258
+CODE_LINE_H = 25
+CODE_RIGHT = 1506
 
 PANEL_TOP = 528
 PANEL_LEFT = 40
-PANEL_RIGHT = 872
+PANEL_RIGHT = 852
 
 MAX_ITEMS = 15
 
@@ -115,7 +115,7 @@ CODE = [
     "        if right < n and a[right] < a[best]:",
     "            best = right",
     "        if best == i:",
-    "            return   # subtree is a valid heap",
+    "            return   # this subtree is a valid heap",
     "        a[i], a[best] = a[best], a[i]",
     "        i = best",
 ]
@@ -352,6 +352,7 @@ def launch(values: list[int] | None = None) -> None:
         "index": 0,
         "playing": False,
         "animating": False,
+        "scale": 1.0,
     }
 
     root = tk.Tk()
@@ -361,9 +362,32 @@ def launch(values: list[int] | None = None) -> None:
     root.attributes("-topmost", True)
     root.after(400, lambda: root.attributes("-topmost", False))
 
-    canvas = tk.Canvas(root, width=CANVAS_W, height=CANVAS_H, bg=BG,
+    # The drawing is authored at CANVAS_W x CANVAS_H and scaled to whatever
+    # room the window actually has, so nothing is ever clipped off-screen.
+    # Resizing the window re-scales it live.
+    start_scale = min(
+        1.0,
+        (root.winfo_screenwidth() - 60) / CANVAS_W,
+        (root.winfo_screenheight() - 170) / CANVAS_H,
+    )
+    state["scale"] = start_scale
+    view_w = int(CANVAS_W * start_scale)
+    view_h = int(CANVAS_H * start_scale)
+
+    def s(value: float) -> float:
+        return value * state["scale"]
+
+    def font(size: int, weight: str = "normal", family: str = "Helvetica"):
+        return (family, max(6, int(size * state["scale"])), weight)
+
+    def mono(size: int, weight: str = "normal"):
+        return font(size, weight, "Courier")
+
+    canvas = tk.Canvas(root, width=view_w, height=view_h, bg=BG,
                        highlightthickness=0)
-    canvas.grid(row=0, column=0, padx=10, pady=(10, 4))
+    canvas.grid(row=0, column=0, sticky="nsew", padx=8, pady=(8, 4))
+    root.grid_rowconfigure(0, weight=1)
+    root.grid_columnconfigure(0, weight=1)
 
     # --- geometry ---------------------------------------------------------
 
@@ -389,32 +413,33 @@ def launch(values: list[int] | None = None) -> None:
             return CHILD_FILL, ACCENT
         if role == "done":
             return DONE_FILL, DONE_EDGE
-        n = len(step.order)
-        if index >= n // 2:
+        if index >= len(step.order) // 2:
             return LEAF_FILL, LEAF_EDGE
         return NODE_FILL, NODE_EDGE
 
-    def draw(step: Step) -> None:
+    def draw(step: Step, attempt: int = 0) -> None:
         canvas.delete("all")
         order = step.order
         n = len(order)
+        radius = s(NODE_R)
 
         canvas.create_text(
-            22, 24, anchor="w", text="heapify — build a heap from an unordered array",
-            font=("Helvetica", 17, "bold"), fill=TEXT,
+            s(22), s(24), anchor="w",
+            text="heapify — build a heap from an unordered array",
+            font=font(17, "bold"), fill=TEXT,
         )
         canvas.create_text(
-            22, 48, anchor="w",
+            s(22), s(48), anchor="w",
             text="parent(i) = (i-1)//2     left(i) = 2i+1     right(i) = 2i+2"
                  "     ·     O(n) total, not O(n log n)",
-            font=("Courier", 11), fill=MUTED,
+            font=mono(11), fill=MUTED,
         )
         canvas.create_text(
-            22, 70, anchor="w",
+            s(22), s(70), anchor="w",
             text=f"step {state['index'] + 1} / {len(state['steps'])}"
                  f"     comparisons {step.stats['comparisons']}"
                  f"     swaps {step.stats['swaps']}",
-            font=("Courier", 11, "bold"), fill=ACCENT,
+            font=mono(11, "bold"), fill=ACCENT,
         )
 
         for index in range(n):
@@ -423,76 +448,97 @@ def launch(values: list[int] | None = None) -> None:
                     active = (step.roles.get(index) in ("cursor", "swap")
                               and step.roles.get(child) in ("child", "swap"))
                     canvas.create_line(
-                        order[index].pos[0], order[index].pos[1],
-                        order[child].pos[0], order[child].pos[1],
+                        s(order[index].pos[0]), s(order[index].pos[1]),
+                        s(order[child].pos[0]), s(order[child].pos[1]),
                         fill=EDGE_ACTIVE if active else EDGE_COLOR,
                         width=3 if active else 2,
                     )
 
         for index, item in enumerate(order):
-            x, y = item.pos[0], item.pos[1]
+            x, y = s(item.pos[0]), s(item.pos[1])
             fill, edge = style_for(index, step)
-            canvas.create_oval(x - NODE_R, y - NODE_R, x + NODE_R, y + NODE_R,
+            canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
                                fill=fill, outline=edge, width=2)
             canvas.create_text(x, y, text=str(item.value),
-                               font=("Helvetica", 14, "bold"), fill=TEXT)
-            canvas.create_text(x + NODE_R + 1, y - NODE_R + 1, text=f"[{index}]",
-                               anchor="w", font=("Courier", 9), fill=MUTED)
+                               font=font(14, "bold"), fill=TEXT)
+            canvas.create_text(x + radius + s(1), y - radius + s(1),
+                               text=f"[{index}]", anchor="w",
+                               font=mono(9), fill=MUTED)
 
-        canvas.create_text(ARRAY_LEFT, ARRAY_Y - CELL_H, anchor="w",
+        cell_w, cell_h = s(CELL_W), s(CELL_H)
+        canvas.create_text(s(ARRAY_LEFT), s(ARRAY_Y - CELL_H), anchor="w",
                            text="the array — the heap's only real storage:",
-                           font=("Helvetica", 11, "italic"), fill=MUTED)
+                           font=font(11, "italic"), fill=MUTED)
         for index in range(n):
-            left = ARRAY_LEFT + index * CELL_W
-            canvas.create_rectangle(left, ARRAY_Y - CELL_H / 2,
-                                    left + CELL_W, ARRAY_Y + CELL_H / 2,
+            left = s(ARRAY_LEFT + index * CELL_W)
+            canvas.create_rectangle(left, s(ARRAY_Y) - cell_h / 2,
+                                    left + cell_w, s(ARRAY_Y) + cell_h / 2,
                                     fill="#ffffff", outline=CELL_EDGE)
-            canvas.create_text(left + CELL_W / 2, ARRAY_Y + CELL_H / 2 + 12,
-                               text=str(index), font=("Courier", 10), fill=MUTED)
+            canvas.create_text(left + cell_w / 2,
+                               s(ARRAY_Y) + cell_h / 2 + s(12),
+                               text=str(index), font=mono(10), fill=MUTED)
         for index, item in enumerate(order):
-            x = item.pos[2]
+            x = s(item.pos[2])
             fill, edge = style_for(index, step)
-            canvas.create_rectangle(x - CELL_W / 2 + 3, ARRAY_Y - CELL_H / 2 + 3,
-                                    x + CELL_W / 2 - 3, ARRAY_Y + CELL_H / 2 - 3,
+            canvas.create_rectangle(x - cell_w / 2 + s(3),
+                                    s(ARRAY_Y) - cell_h / 2 + s(3),
+                                    x + cell_w / 2 - s(3),
+                                    s(ARRAY_Y) + cell_h / 2 - s(3),
                                     fill=fill, outline=edge, width=2)
-            canvas.create_text(x, ARRAY_Y, text=str(item.value),
-                               font=("Helvetica", 13, "bold"), fill=TEXT)
+            canvas.create_text(x, s(ARRAY_Y), text=str(item.value),
+                               font=font(13, "bold"), fill=TEXT)
 
         draw_code(step)
         draw_panel(step)
         draw_legend()
 
+        # Font sizes are integers, so scaling is never exact. If anything still
+        # pokes outside the canvas, shrink to fit and redraw once or twice.
+        if attempt < 3:
+            bounds = canvas.bbox("all")
+            width, height = canvas.winfo_width(), canvas.winfo_height()
+            if bounds and width > 1 and height > 1:
+                overflow = max((bounds[2] + 4) / width, (bounds[3] + 4) / height)
+                if overflow > 1.0:
+                    state["scale"] /= overflow
+                    draw(step, attempt + 1)
+
     def draw_code(step: Step) -> None:
-        height = len(CODE) * CODE_LINE_H + 20
-        canvas.create_rectangle(CODE_LEFT - 12, CODE_TOP - 26, CODE_RIGHT,
-                                CODE_TOP + height, fill=CODE_BG, outline=CODE_BG)
-        canvas.create_text(CODE_LEFT, CODE_TOP - 12, anchor="w", text="the code",
-                           font=("Helvetica", 11, "bold"), fill=CODE_DIM)
+        line_h = s(CODE_LINE_H)
+        height = len(CODE) * line_h + s(20)
+        canvas.create_rectangle(s(CODE_LEFT - 12), s(CODE_TOP - 26),
+                                s(CODE_RIGHT), s(CODE_TOP) + height,
+                                fill=CODE_BG, outline=CODE_BG)
+        canvas.create_text(s(CODE_LEFT), s(CODE_TOP - 12), anchor="w",
+                           text="the code", font=font(12, "bold"), fill=CODE_DIM)
         for number, line in enumerate(CODE):
-            y = CODE_TOP + 12 + number * CODE_LINE_H
+            y = s(CODE_TOP + 12) + number * line_h
             active = number == step.code_line
             if active:
-                canvas.create_rectangle(CODE_LEFT - 8, y - 9, CODE_RIGHT - 4, y + 10,
+                canvas.create_rectangle(s(CODE_LEFT - 8), y - s(9),
+                                        s(CODE_RIGHT - 4), y + s(10),
                                         fill=CODE_HL, outline=CODE_HL)
-            canvas.create_text(CODE_LEFT, y, anchor="w", text=line,
-                               font=("Courier", 12, "bold" if active else "normal"),
-                               fill=CODE_HL_FG if active else
-                               (CODE_DIM if line.strip().startswith("#") else CODE_FG))
+            canvas.create_text(
+                s(CODE_LEFT), y, anchor="w", text=line,
+                font=mono(14, "bold" if active else "normal"),
+                fill=CODE_HL_FG if active else
+                (CODE_DIM if line.strip().startswith("#") else CODE_FG),
+            )
 
     def draw_panel(step: Step) -> None:
-        canvas.create_rectangle(PANEL_LEFT, PANEL_TOP, PANEL_RIGHT, CANVAS_H - 16,
-                                fill=PANEL_BG, outline=PANEL_EDGE)
-        canvas.create_text(PANEL_LEFT + 16, PANEL_TOP + 22, anchor="w",
-                           text=step.title, font=("Helvetica", 14, "bold"),
-                           fill=TEXT, width=PANEL_RIGHT - PANEL_LEFT - 32)
-        y = PANEL_TOP + 52
+        canvas.create_rectangle(s(PANEL_LEFT), s(PANEL_TOP), s(PANEL_RIGHT),
+                                s(CANVAS_H - 16), fill=PANEL_BG,
+                                outline=PANEL_EDGE)
+        wrap = s(PANEL_RIGHT - PANEL_LEFT - 32)
+        canvas.create_text(s(PANEL_LEFT + 16), s(PANEL_TOP + 22), anchor="w",
+                           text=step.title, font=font(14, "bold"), fill=TEXT,
+                           width=wrap)
+        y = s(PANEL_TOP + 52)
         for line in step.detail:
-            item = canvas.create_text(
-                PANEL_LEFT + 16, y, anchor="nw", text="• " + line,
-                font=("Helvetica", 11), fill=TEXT,
-                width=PANEL_RIGHT - PANEL_LEFT - 32,
-            )
-            y = canvas.bbox(item)[3] + 8
+            drawn = canvas.create_text(s(PANEL_LEFT + 16), y, anchor="nw",
+                                       text="• " + line, font=font(11),
+                                       fill=TEXT, width=wrap)
+            y = canvas.bbox(drawn)[3] + s(8)
 
     def draw_legend() -> None:
         entries = [
@@ -502,16 +548,32 @@ def launch(values: list[int] | None = None) -> None:
             (DONE_FILL, DONE_EDGE, "valid heap"),
             (LEAF_FILL, LEAF_EDGE, "leaf (free)"),
         ]
-        x = CODE_LEFT - 12
-        y = CANVAS_H - 152
-        canvas.create_text(x, y - 22, anchor="w", text="legend",
-                           font=("Helvetica", 11, "bold"), fill=MUTED)
+        x = s(CODE_LEFT - 12)
+        y = s(CANVAS_H - 152)
+        canvas.create_text(x, y - s(22), anchor="w", text="legend",
+                           font=font(11, "bold"), fill=MUTED)
         for fill, edge, label in entries:
-            canvas.create_rectangle(x, y - 8, x + 18, y + 8, fill=fill,
-                                    outline=edge, width=2)
-            canvas.create_text(x + 26, y, anchor="w", text=label,
-                               font=("Helvetica", 10), fill=TEXT)
-            y += 24
+            canvas.create_rectangle(x, y - s(8), x + s(18), y + s(8),
+                                    fill=fill, outline=edge, width=2)
+            canvas.create_text(x + s(26), y, anchor="w", text=label,
+                               font=font(10), fill=TEXT)
+            y += s(24)
+
+    def redraw() -> None:
+        if state["steps"]:
+            draw(state["steps"][state["index"]])
+
+    def on_resize(event) -> None:
+        """Re-fit the drawing whenever the window changes size."""
+        if event.width < 50 or event.height < 50:
+            return
+        new_scale = min(event.width / CANVAS_W, event.height / CANVAS_H)
+        if abs(new_scale - state["scale"]) < 0.005:
+            return
+        state["scale"] = new_scale
+        redraw()
+
+    canvas.bind("<Configure>", on_resize)
 
     # --- stepping ---------------------------------------------------------
 
@@ -588,7 +650,7 @@ def launch(values: list[int] | None = None) -> None:
     # --- controls ---------------------------------------------------------
 
     bar = tk.Frame(root, bg=BG)
-    bar.grid(row=1, column=0, pady=(0, 12))
+    bar.grid(row=1, column=0, pady=(0, 10))
 
     back_button = tk.Button(bar, text="◀ Back", command=step_back, width=10)
     back_button.pack(side="left", padx=3)
@@ -600,14 +662,21 @@ def launch(values: list[int] | None = None) -> None:
         side="left", padx=3)
     tk.Button(bar, text="New array", command=lambda: reset(True), width=10).pack(
         side="left", padx=3)
-    tk.Label(bar, text="   Right/Left arrows step · Space plays", bg=BG,
-             fg=MUTED).pack(side="left", padx=8)
+    tk.Label(bar, text="   Right/Left arrows step · Space plays · resize to zoom",
+             bg=BG, fg=MUTED).pack(side="left", padx=8)
 
     root.bind("<Right>", lambda _event: step_forward())
     root.bind("<Left>", lambda _event: step_back())
     root.bind("<space>", lambda _event: toggle_play())
 
     reset(False)
+    # Centre the window, then make sure it is fully on-screen.
+    root.update_idletasks()
+    width, height = root.winfo_reqwidth(), root.winfo_reqheight()
+    x = max(0, (root.winfo_screenwidth() - width) // 2)
+    y = max(0, (root.winfo_screenheight() - height) // 3)
+    root.geometry(f"{width}x{height}+{x}+{y}")
+    root.minsize(640, 420)
     root.mainloop()
 
 
