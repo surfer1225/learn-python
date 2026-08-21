@@ -54,10 +54,11 @@ import sys
 import urllib.request
 from html.parser import HTMLParser
 
-# The example document from the exercise; it draws the letter 'F'.
-EXAMPLE_DOC_URL = (
-    "https://docs.google.com/document/d/e/2PACX-1vTMOmshQe8YvaRXi6gEPKKlsC6UpFJS"
-    "MAk4mQjLm_u1gmHdVVTaeh7nBNFBRlui0sTZ-snGwZM4DBCT/pub"
+# Default document: the full puzzle doc (the simplified example that draws a
+# single 'F' lives at .../2PACX-1vTMOmshQe8YvaRXi6gEPKKlsC6UpFJSMAk4mQjLm_...).
+DEFAULT_DOC_URL = (
+    "https://docs.google.com/document/d/e/2PACX-1vSvM5gDlNvt7npYHhp_XfsJvuntUhq184"
+    "By5xO_pA4b_gCWeXb6dM6ZxwN8rE6S4ghUsCj2VKR21oEP/pub"
 )
 
 
