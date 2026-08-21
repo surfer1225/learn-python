@@ -36,7 +36,7 @@ nothing extra. Runtime is linear in the document size plus the printed area.
 
 Usage
 -----
-As a script (the URL defaults to the example doc that draws an 'F')::
+As a script (the URL defaults to the full puzzle doc)::
 
     python secret_message.py [url]
 
