@@ -42,9 +42,18 @@ class _TableParser(HTMLParser):
             self._cell.append(data)
 
 
+def _ssl_context():
+    """Default trust store, falling back to certifi's when the OS one is missing."""
+    try:
+        import certifi
+    except ImportError:
+        return None
+    return ssl.create_default_context(cafile=certifi.where())
+
+
 def _fetch(url):
     request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(request) as response:
+    with urllib.request.urlopen(request, context=_ssl_context()) as response:
         charset = response.headers.get_content_charset() or "utf-8"
         return response.read().decode(charset)
 
