@@ -8,6 +8,7 @@ Usage:
     python secret_message.py [url]
 """
 
+import ssl
 import sys
 import urllib.request
 from html.parser import HTMLParser
