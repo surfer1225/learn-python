@@ -150,6 +150,8 @@ Backend building blocks behind AI apps.
 ---
 
 ## Visual aids & experiments
+- `python heap/quickselect_walkthrough.py` — quickselect (kth largest without a
+  heap) one step at a time, with the discarded half shrinking each round 🎬
 - `python heap/heapify_walkthrough.py` — heapify one step at a time, paused by
   default, with the executing line of code highlighted 🎬
 - `python heap/heap_visualization.py` — animated binary heap / priority queue:
