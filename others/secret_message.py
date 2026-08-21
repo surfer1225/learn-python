@@ -165,4 +165,4 @@ def print_secret_message(url):
 
 
 if __name__ == "__main__":
-    print_secret_message(sys.argv[1] if len(sys.argv) > 1 else EXAMPLE_DOC_URL)
+    print_secret_message(sys.argv[1] if len(sys.argv) > 1 else DEFAULT_DOC_URL)
