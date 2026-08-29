@@ -563,7 +563,8 @@ def selftest(verbose: bool = True) -> int:
     from .san import replay
 
     problems = 0
-    for line in book_mod.LINES:
+    all_lines = list(book_mod.LINES) + [g.line for g in gambits_mod.GAMBITS]
+    for line in all_lines:
         # 1. Every book move must be legal, and must round-trip through SAN
         #    exactly as written (catches "Nxd2" where "Nbxd2" is required).
         game = Game()
