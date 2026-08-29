@@ -101,12 +101,14 @@ def _show_plans(line: Line) -> None:
         return
     print(paint("\n   Plans from here:", BOLD))
     for plan in line.plans:
-        print(f"     - {plan}")
+        body = wrap(f"- {plan}", indent="     ")
+        print(emphasize(body))
 
 
 def _show_traps(move: BookMove) -> None:
     for wrong, why in move.mistakes:
-        print(f"     {paint('x ' + wrong, RED)} — {why}")
+        body = wrap(f"{wrong} — {why}", indent="     ")
+        print(emphasize(body.replace(wrong, paint(wrong, RED), 1)))
 
 
 # --- learn -----------------------------------------------------------------
