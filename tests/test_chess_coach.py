@@ -59,10 +59,15 @@ def test_disambiguation_by_file():
 
 
 def test_promotion_notation():
-    game = replay(["e4", "d5", "exd5", "Nf6", "dxc6", "e5", "cxb7", "Be7"])
-    promotions = {to_san(game, m) for m in game.board.all_legal_moves(Color.WHITE) if m.start == (1, 1)}
-    assert "bxa8=Q+" in promotions or "bxa8=Q" in promotions
-    assert "b8=Q" in promotions
+    # White's pawn walks d5-d6xc7 and promotes on the eighth rank.
+    game = replay(["e4", "d5", "exd5", "Nf6", "d6", "e5", "dxc7", "Be7"])
+    c7 = (1, 2)
+    promotions = {to_san(game, m) for m in game.board.all_legal_moves(Color.WHITE) if m.start == c7}
+    assert "cxb8=Q" in promotions  # takes the knight, no check
+    assert "cxd8=Q+" in promotions  # takes the queen, checks the king on e8
+    assert "cxb8=N" in promotions  # underpromotion is a distinct move
+    # c8 is blocked by Black's bishop, so there is no quiet promotion.
+    assert not any(p.startswith("c8") for p in promotions)
 
 
 # --- SAN parsing -----------------------------------------------------------
