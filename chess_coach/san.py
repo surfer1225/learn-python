@@ -13,13 +13,13 @@ suffixes, and castling are automatically consistent both ways.
 
 from __future__ import annotations
 
-import copy
 from typing import List, Optional
 
-from chess.constants import Color
+from chess.board import Board
+from chess.constants import BOARD_SIZE, Color
 from chess.game import Game
 from chess.move import Move, Position
-from chess.pieces import Pawn
+from chess.pieces import PROMOTION_CLASSES, Pawn
 
 # Characters that carry no information for matching: check/mate marks, the
 # annotator's punctuation, and the capture 'x'. Dropping 'x' from both sides of
