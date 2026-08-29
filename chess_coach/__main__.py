@@ -3,6 +3,8 @@
     python -m chess_coach                 interactive coach
     python -m chess_coach --selftest      validate the book, print nothing else
     python -m chess_coach --drill italian jump straight into a drill
+    python -m chess_coach --gambits       list the gambits by soundness
+    python -m chess_coach --gambit evans  show one gambit's trade
     python -m chess_coach --learn ruylopez --no-pause    print a whole line
 """
 
