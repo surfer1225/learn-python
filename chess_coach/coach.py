@@ -88,7 +88,7 @@ def _show_plans(line: Line) -> None:
         return
     print(paint("\n   Plans from here:", BOLD))
     for plan in line.plans:
-        print(wrap(plan, indent="     - ")[0:] if False else "     - " + wrap(plan, indent="")[2:] if False else f"     - {plan}")
+        print(f"     - {plan}")
 
 
 def _show_traps(move: BookMove) -> None:
