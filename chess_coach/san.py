@@ -154,4 +154,4 @@ def _check_suffix(game: Game, move: Move, mover: Color) -> str:
     trial.apply(move)
     if not trial.is_in_check(mover.opponent):
         return ""
-    return "" if trial.all_legal_moves(mover.opponent) else "#" or "+"
+    return "+" if trial.all_legal_moves(mover.opponent) else "#"
