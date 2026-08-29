@@ -127,19 +127,30 @@ def _disambiguator(game: Game, move: Move, piece) -> str:
     Standard rule: prefer the file, fall back to the rank, and only give the
     whole square when two rivals share both a file and a rank with us (three
     queens, say). Needed for positions like Nbxd2 where either knight can land.
+
+    Only same-type pieces are asked for their legal moves. Generating *all*
+    legal moves here would be correct but quadratic, and `to_san` sits in the
+    inner loop of `from_san`.
     """
-    rivals = [
-        other
-        for other in game.board.all_legal_moves(piece.color)
-        if other.end == move.end
-        and other.start != move.start
-        and type(game.board.piece_at(other.start)) is type(piece)
-    ]
+    board = game.board
+    rivals: List[Position] = []
+    for row in range(BOARD_SIZE):
+        for col in range(BOARD_SIZE):
+            other = board.squares[row][col]
+            if (
+                other is not None
+                and (row, col) != move.start
+                and other.color is piece.color
+                and type(other) is type(piece)
+                and any(m.end == move.end for m in board.legal_moves((row, col)))
+            ):
+                rivals.append((row, col))
+
     if not rivals:
         return ""
 
-    file_is_unique = not any(r.start[1] == move.start[1] for r in rivals)
-    rank_is_unique = not any(r.start[0] == move.start[0] for r in rivals)
+    file_is_unique = not any(r[1] == move.start[1] for r in rivals)
+    rank_is_unique = not any(r[0] == move.start[0] for r in rivals)
 
     if file_is_unique:
         return chr(ord("a") + move.start[1])
@@ -148,10 +159,46 @@ def _disambiguator(game: Game, move: Move, piece) -> str:
     return square_name(move.start)
 
 
+def _board_after(board: Board, move: Move) -> Board:
+    """The position after `move`, without deep-copying every piece.
+
+    `Board.apply` sets `piece.has_moved`, so it cannot be run against a shallow
+    copy — it would corrupt the real position's castling rights. Here the grid
+    is copied and the pieces are only *re-placed*, never mutated. That is
+    enough to answer "is the enemy king attacked?", which is all we need.
+    """
+    clone = Board.__new__(Board)
+    clone.squares = [row[:] for row in board.squares]
+    clone.en_passant_target = None
+
+    start_row, start_col = move.start
+    end_row, end_col = move.end
+    piece = clone.squares[start_row][start_col]
+
+    if move.is_en_passant:
+        clone.squares[start_row][end_col] = None
+
+    clone.squares[end_row][end_col] = piece
+    clone.squares[start_row][start_col] = None
+
+    if move.promotion:
+        clone.squares[end_row][end_col] = PROMOTION_CLASSES[move.promotion](piece.color)
+
+    if move.is_castle:
+        rook_from, rook_to = (7, 5) if end_col == 6 else (0, 3)
+        clone.squares[end_row][rook_to] = clone.squares[end_row][rook_from]
+        clone.squares[end_row][rook_from] = None
+
+    return clone
+
+
 def _check_suffix(game: Game, move: Move, mover: Color) -> str:
-    """'+' for check, '#' for mate, '' otherwise — decided on a throwaway copy."""
-    trial = copy.deepcopy(game.board)
-    trial.apply(move)
-    if not trial.is_in_check(mover.opponent):
+    """'+' for check, '#' for mate, '' otherwise.
+
+    The mate test is the expensive one (it generates every enemy reply), so it
+    only runs once we already know the move gives check — a rare case.
+    """
+    after = _board_after(game.board, move)
+    if not after.is_in_check(mover.opponent):
         return ""
-    return "+" if trial.all_legal_moves(mover.opponent) else "#"
+    return "+" if after.all_legal_moves(mover.opponent) else "#"
