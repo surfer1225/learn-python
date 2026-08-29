@@ -607,17 +607,20 @@ def selftest(verbose: bool = True) -> int:
         if not gambit.compensation:
             print(f"FAIL {gambit.key}: no compensation listed")
             problems += 1
-        # The offered material must actually be taken somewhere in the line
-        # (except the Queen's Gambit, which is in the book precisely because
-        # the material comes straight back).
+        # The gambiteer must genuinely be down material at the end of the line,
+        # measured against an even start rather than against the position just
+        # before the offer. Those differ whenever a recapture is still pending:
+        # in the Smith-Morra, White is already a pawn down when 3.c3 is played,
+        # so the delta across the sacrifice is zero even though the gambit is
+        # real. The Queen's Gambit is exempt — it is here precisely because the
+        # material comes straight back.
         if gambit.soundness is not gambits_mod.Soundness.NOT_A_GAMBIT:
-            before = _material_count(replay(gambit.sans[: gambit.sacrifice_ply]))
-            after = _material_count(replay(gambit.sans))
+            final = _material_count(replay(gambit.sans))
             hero_sign = 1 if gambit.hero is Color.WHITE else -1
-            if (after - before) * hero_sign >= 0:
+            if final * hero_sign >= 0:
                 print(
-                    f"FAIL {gambit.key}: hero does not end up down material "
-                    f"({before:+d} -> {after:+d}); is this really a gambit?"
+                    f"FAIL {gambit.key}: hero is not down material at the end "
+                    f"({final:+d} in White's favour); is this really a gambit?"
                 )
                 problems += 1
 
