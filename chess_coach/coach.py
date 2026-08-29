@@ -69,7 +69,19 @@ def _show_board(session: Session, flipped: bool, hint=None) -> None:
 
 
 def _say(text: str) -> None:
-    print(wrap(text, indent="   "))
+    print(emphasize(wrap(text, indent="   ")))
+
+
+def _respond(label: str, text: str, *codes: str) -> None:
+    """A coloured label followed by wrapped prose.
+
+    Wrapping happens on the plain string — measuring width after adding ANSI
+    escapes would count invisible characters and wrap far too early.
+    """
+    body = wrap(f"{label} {text}", indent="   ")
+    if codes:
+        body = body.replace(label, paint(label, *codes), 1)
+    print(emphasize(body))
 
 
 def _heading(text: str) -> None:
