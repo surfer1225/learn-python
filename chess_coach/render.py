@@ -130,12 +130,23 @@ def emphasize(text: str) -> str:
     return _EMPHASIS.sub(lambda m: BOLD + m.group(1) + _RESET, text)
 
 
-def wrap(text: str, width: int = 76, indent: str = "") -> str:
-    """Minimal word wrap that preserves `indent` on every line."""
+def wrap(
+    text: str,
+    width: int = 76,
+    indent: str = "",
+    first_indent: Optional[str] = None,
+) -> str:
+    """Word wrap preserving `indent` on every line.
+
+    `first_indent` overrides the prefix of the first line only, which gives
+    hanging indents for bullets: pass "  - " and "    " so wrapped text lines
+    up under the text rather than under the marker.
+    """
     words = text.split()
     if not words:
         return ""
-    lines, current = [], indent + words[0]
+    head = indent if first_indent is None else first_indent
+    lines, current = [], head + words[0]
     for word in words[1:]:
         if len(current) + 1 + len(word) > width:
             lines.append(current)
@@ -144,6 +155,11 @@ def wrap(text: str, width: int = 76, indent: str = "") -> str:
             current += " " + word
     lines.append(current)
     return "\n".join(lines)
+
+
+def bullet(text: str, indent: str = "     ", marker: str = "- ") -> str:
+    """A wrapped bullet whose continuation lines hang under the text."""
+    return wrap(text, indent=indent + " " * len(marker), first_indent=indent + marker)
 
 
 def square_list(positions: Iterable[Position]) -> str:
