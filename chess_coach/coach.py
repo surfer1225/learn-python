@@ -196,32 +196,37 @@ def drill(line: Line) -> None:
 
         if normalize(answer) == normalize(book_move.san):
             session.push(book_move.san)
-            praise = "Correct." if wrong_here == 0 else "Right — that's the one."
-            print(f"   {paint(praise, GREEN)} {book_move.idea}")
+            praise = "Correct." if wrong_here == 0 else "Right, that's the one."
+            _respond(praise, book_move.idea, GREEN)
             wrong_here = 0
             ply += 1
             continue
 
-        # Wrong. Three grades of wrong, and they deserve different answers.
+        # Wrong. Three grades of wrong, and they deserve different answers:
+        # a known trap gets its refutation, a merely-inferior move gets the
+        # book move and moves on, and a typo gets nothing but a nudge.
         mistakes_made += 1
         wrong_here += 1
         known = _known_mistake(book_move, answer)
         if known is not None:
-            print(f"   {paint('No —', RED)} {known}")
+            _respond("No.", known, RED)
         elif from_san(session.game, answer) is not None:
-            print(
-                f"   {paint('Legal, but not the book move.', YELLOW)} "
-                f"The move is {paint(book_move.san, BOLD)}: {book_move.idea}"
+            _respond(
+                "Legal, but not the book move.",
+                f"The move is {book_move.san} — {book_move.idea}",
+                YELLOW,
             )
             session.push(book_move.san)
             ply += 1
             wrong_here = 0
             continue
         else:
-            print(f"   {paint('Not a legal move here.', RED)} Check the notation and the board.")
+            _respond("Not a legal move here.", "Check the notation and the board.", RED)
+            mistakes_made -= 1  # a typo is not a chess error
+            wrong_here -= 1
 
         if wrong_here >= 2:
-            print(f"   The move is {paint(book_move.san, BOLD)}: {book_move.idea}")
+            _respond("The move is", f"{book_move.san} — {book_move.idea}", BOLD)
             session.push(book_move.san)
             ply += 1
             wrong_here = 0
