@@ -115,6 +115,20 @@ def movelist(sans: list[str]) -> str:
     return "  ".join(out)
 
 
+_EMPHASIS = re.compile(r"\*([^*]+)\*")
+
+
+def emphasize(text: str) -> str:
+    """Render *emphasis* as terminal bold, or strip the markers when piping.
+
+    The book uses asterisks because the commentary is written to be read as
+    prose; without this the learner would see literal asterisks on screen.
+    """
+    if not color_enabled():
+        return _EMPHASIS.sub(r"\1", text)
+    return _EMPHASIS.sub(lambda m: BOLD + m.group(1) + _RESET, text)
+
+
 def wrap(text: str, width: int = 76, indent: str = "") -> str:
     """Minimal word wrap that preserves `indent` on every line."""
     words = text.split()
