@@ -92,35 +92,35 @@ def test_illegal_and_nonsense_moves_return_none():
     assert from_san(game, "") is None
 
 
-def test_round_trip_on_random_games():
-    """Every legal move must render to SAN and parse back to itself."""
+def test_san_is_a_bijection_on_random_games():
+    """The property everything else rests on.
+
+    `from_san` works by rendering every legal move and matching the string, so
+    it is correct exactly when SAN is injective over the legal moves of a
+    position. Test that directly — rendering all moves once per position —
+    rather than calling `from_san` per move, which would be quadratic.
+    """
     rng = random.Random(0)
-    for _ in range(30):
-        game = Game()
-        for _ply in range(24):
-            moves = game.board.all_legal_moves(game.turn)
-            if not moves:
-                break
-            # Check the whole move list, not just the one we play.
-            for move in moves:
-                san = to_san(game, move)
-                assert from_san(game, san) == move, f"{san} did not round-trip"
-            game.move(rng.choice(moves))
-
-
-def test_san_is_unique_per_position():
-    """No two distinct legal moves may share a SAN string — that is the whole
-    point of disambiguation, and the property `from_san` relies on."""
-    rng = random.Random(1)
-    for _ in range(20):
+    positions = 0
+    for _ in range(12):
         game = Game()
         for _ply in range(20):
             moves = game.board.all_legal_moves(game.turn)
             if not moves:
                 break
             rendered = [normalize(to_san(game, m)) for m in moves]
-            assert len(set(rendered)) == len(rendered), "two moves share a SAN"
+            assert len(set(rendered)) == len(rendered), (
+                f"two legal moves share a SAN: "
+                f"{[s for s in rendered if rendered.count(s) > 1]}"
+            )
+            # Spot-check the parse direction on a sample (from_san is the
+            # expensive call, so a few per position rather than all).
+            for move in rng.sample(moves, min(3, len(moves))):
+                san = to_san(game, move)
+                assert from_san(game, san) == move, f"{san} did not round-trip"
+            positions += 1
             game.move(rng.choice(moves))
+    assert positions > 200, f"only covered {positions} positions"
 
 
 # --- book integrity --------------------------------------------------------
