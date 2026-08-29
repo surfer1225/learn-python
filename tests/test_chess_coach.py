@@ -68,8 +68,10 @@ def test_promotion_notation():
 # --- SAN parsing -----------------------------------------------------------
 def test_parsing_is_lenient_about_noise():
     game = replay(["e4", "e5", "Bc4", "Nc6", "Qh5", "Nf6"])
-    for spelling in ("Qxf7#", "Qxf7", "qxf7" if False else "Qxf7+", " Qxf7 ", "Qf7"):
+    for spelling in ("Qxf7#", "Qxf7", "Qxf7+", " Qxf7 ", "Qf7"):
         assert from_san(game, spelling) is not None, spelling
+    # Case still matters: 'q' is not the queen, and there is no q-file.
+    assert from_san(game, "qxf7") is None
 
 
 def test_castling_accepts_zeroes():
