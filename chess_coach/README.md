@@ -100,15 +100,23 @@ come out consistent for free. The property this relies on is that SAN is
 injective over a position's legal moves, which the tests assert directly over
 240 random positions.
 
-**The book validates itself.** `--selftest` replays all 13 lines through the
-real engine and checks that every move is legal, that every SAN string is
-*exactly* what the engine renders, and that every listed trap is a legal
-alternative at that point. A typo in the book is a test failure, not a coach
-confidently teaching an illegal move.
+**The book validates itself.** `--selftest` replays every line through the real
+engine and checks that each move is legal, that each SAN string is *exactly*
+what the engine renders, and that each listed trap is a legal alternative at
+that point. A typo in the book is a test failure, not a coach confidently
+teaching an illegal move.
+
+Gambits get an extra check the openings don't need: the sacrifice must belong
+to the side making it, and **the gambiteer must actually end up down material**,
+counted off the real board rather than taken from the prose. This caught a bug
+in the check itself — the Smith-Morra measures as level across the sacrifice
+because White is already a pawn down pending recapture when 3.c3 is played, so
+the invariant had to be "down relative to an even start", not "down relative to
+the move before".
 
 ```
 $ python -m chess_coach --selftest
-13 lines, 131 plies, 28 traps validated against the engine: ok
+13 lines + 9 gambits, 220 plies, 31 traps validated against the engine: ok
 ```
 
 ## Tests
