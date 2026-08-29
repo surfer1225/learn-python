@@ -259,6 +259,123 @@ def _known_mistake(book_move: BookMove, answer: str) -> Optional[str]:
     return None
 
 
+# --- gambits ---------------------------------------------------------------
+def show_gambit(gambit: Gambit, *, pause: bool = True) -> None:
+    """Play a gambit out, stopping at the sacrifice to show the trade.
+
+    The board is drawn twice at the critical moment — once before the offer
+    with the square marked, once after — because the whole idea is easier to
+    see as a before/after than as a sentence.
+    """
+    _heading(f"\n{gambit.name}  [{gambit.eco}]")
+    print(
+        f"   {paint(gambit.soundness.value, _soundness_colour(gambit.soundness))}"
+        f" · {paint(gambit.hero.value.title(), BOLD)}"
+    )
+    _say(gambit.soundness.blurb)
+
+    print(paint("\n   You give:", BOLD) + f"  {gambit.cost}")
+    print(paint("   You get:", BOLD))
+    for item in gambit.compensation:
+        print(emphasize(wrap(f"- {item}", indent="     ")))
+
+    session = Session()
+    flipped = gambit.hero is Color.BLACK
+
+    for ply, book_move in enumerate(gambit.moves):
+        mover = Color.WHITE if ply % 2 == 0 else Color.BLACK
+        prefix = f"{ply // 2 + 1}." if mover is Color.WHITE else f"{ply // 2 + 1}..."
+        is_sac = ply == gambit.sacrifice_ply
+
+        if is_sac:
+            # Mark the square the pawn is about to step onto, before it moves.
+            offered = from_san(session.game, book_move.san)
+            _show_board(session, flipped, hint=[offered.end] if offered else None)
+            print(paint("   ┌─ THE SACRIFICE " + "─" * 40, YELLOW))
+            print(f"   {paint(prefix + ' ' + book_move.san, BOLD, YELLOW)}"
+                  f"   — offering {gambit.cost}, onto the marked square")
+            _say(book_move.idea)
+            print(paint("   └" + "─" * 56, YELLOW))
+            session.push(book_move.san)
+            _show_board(session, flipped)
+            if pause and not _continue():
+                return
+            continue
+
+        session.push(book_move.san)
+        _show_board(session, flipped)
+        print(f"   {paint(prefix + ' ' + book_move.san, BOLD)}")
+        _say(book_move.idea)
+        if book_move.mistakes:
+            print(paint("\n   Instead:", DIM))
+            _show_traps(book_move)
+        if pause and ply < len(gambit.moves) - 1 and not _continue():
+            return
+
+    print(paint("\n   Final position: ", BOLD) + movelist(session.played))
+    balance = _material_balance(session)
+    print(f"   {paint('Material:', BOLD)} {balance}")
+    print()
+    _respond("Critical test:", gambit.test, YELLOW)
+    _respond("Verdict:", gambit.verdict, CYAN)
+    print(paint(f"\n   Drill it with:  drill {gambit.key}", DIM))
+
+
+def _continue() -> bool:
+    try:
+        return input(paint("\n   [enter] next, 'q' to stop  ", DIM)).strip().lower() != "q"
+    except EOFError:
+        return False
+
+
+def _soundness_colour(soundness: Soundness) -> str:
+    return {
+        Soundness.SOUND: GREEN,
+        Soundness.SHARP: YELLOW,
+        Soundness.POSITIONAL: CYAN,
+        Soundness.DUBIOUS: RED,
+        Soundness.NOT_A_GAMBIT: DIM,
+    }[soundness]
+
+
+# Standard piece values, used only to state the material count out loud.
+_VALUES = {"Q": 9, "R": 5, "B": 3, "N": 3, "P": 1, "K": 0}
+
+
+def _material_balance(session: Session) -> str:
+    """Who is up how much — the number the gambit is asking you to accept."""
+    score = 0
+    for row in session.game.board.squares:
+        for piece in row:
+            if piece is not None:
+                value = _VALUES[piece.letter]
+                score += value if piece.color is Color.WHITE else -value
+    if score == 0:
+        return "level"
+    leader = "White" if score > 0 else "Black"
+    return f"{leader} +{abs(score)} ({'pawn' if abs(score) == 1 else 'pawns'})"
+
+
+def list_gambits() -> None:
+    _heading("\nGambits")
+    _say(
+        "A gambit trades material for something else — time, lines, or "
+        "pressure. The question is never 'is this a sacrifice' but 'is the "
+        "compensation real'. These are ordered so you can compare."
+    )
+    for soundness in Soundness:
+        group = gambits_mod.by_soundness(soundness)
+        if not group:
+            continue
+        print(f"\n   {paint(soundness.value, _soundness_colour(soundness))}"
+              f" {paint('— ' + soundness.blurb, DIM)}")
+        for gambit in group:
+            side = gambit.hero.value[0].upper()
+            print(f"     {paint(gambit.key.ljust(13), BOLD)} {gambit.name}"
+                  f"  {paint(f'[{gambit.eco}, {side}]', DIM)}")
+    print(paint("\n   gambit <key>   show one    ·    gambit random   surprise me", DIM))
+
+
 # --- explore ---------------------------------------------------------------
 def explore() -> None:
     """Free play, with the coach naming the opening and flagging the exit."""
