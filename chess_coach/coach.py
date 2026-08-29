@@ -526,13 +526,27 @@ def repl() -> None:
             explore()
         elif command == "random":
             drill(random.choice(book_mod.LINES))
+        elif command == "gambits":
+            list_gambits()
+        elif command == "gambit":
+            if not args:
+                list_gambits()
+                continue
+            if args[0].lower() == "random":
+                show_gambit(random.choice(gambits_mod.GAMBITS))
+                continue
+            gambit = gambits_mod.get(args[0])
+            if gambit is None:
+                print(f"   No gambit called {args[0]!r}. Type 'gambits' to see them.")
+                continue
+            show_gambit(gambit)
         elif command in ("learn", "drill"):
             if not args:
                 print(f"   Which opening? Try: {command} italian")
                 continue
-            line = book_mod.get(args[0])
+            line = resolve(args[0])
             if line is None:
-                print(f"   No opening called {args[0]!r}. Type 'list' to see them.")
+                print(f"   No opening called {args[0]!r}. Type 'list' or 'gambits'.")
                 continue
             (learn if command == "learn" else drill)(line)
         else:
