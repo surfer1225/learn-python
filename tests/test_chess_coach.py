@@ -11,7 +11,8 @@ import random
 from chess import Color, Game, GameStatus
 
 from chess_coach import book as book_mod
-from chess_coach.coach import selftest
+from chess_coach import gambits as gambits_mod
+from chess_coach.coach import _material_count, resolve, selftest, show_gambit
 from chess_coach.san import from_san, normalize, play_san, replay, to_san
 
 
