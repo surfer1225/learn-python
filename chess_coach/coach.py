@@ -30,6 +30,7 @@ from .render import (
     RED,
     YELLOW,
     board_text,
+    bullet,
     emphasize,
     movelist,
     paint,
@@ -117,13 +118,12 @@ def _show_plans(line: Line) -> None:
         return
     print(paint("\n   Plans from here:", BOLD))
     for plan in line.plans:
-        body = wrap(f"- {plan}", indent="     ")
-        print(emphasize(body))
+        print(emphasize(bullet(plan)))
 
 
 def _show_traps(move: BookMove) -> None:
     for wrong, why in move.mistakes:
-        body = wrap(f"{wrong} — {why}", indent="     ")
+        body = bullet(f"{wrong} — {why}")
         print(emphasize(body.replace(wrong, paint(wrong, RED), 1)))
 
 
@@ -293,7 +293,7 @@ def show_gambit(gambit: Gambit, *, pause: bool = True) -> None:
     print(paint("\n   You give:", BOLD) + f"  {gambit.cost}")
     print(paint("   You get:", BOLD))
     for item in gambit.compensation:
-        print(emphasize(wrap(f"- {item}", indent="     ")))
+        print(emphasize(bullet(item)))
 
     session = Session()
     flipped = gambit.hero is Color.BLACK

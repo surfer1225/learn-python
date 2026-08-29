@@ -168,6 +168,90 @@ def test_hero_side_moves_land_on_the_right_ply():
             assert play_san(game, book_move.san) is not None
 
 
+# --- gambits ---------------------------------------------------------------
+def test_gambit_keys_unique_and_distinct_from_openings():
+    keys = [g.key for g in gambits_mod.GAMBITS]
+    assert len(keys) == len(set(keys))
+    assert not set(keys) & set(book_mod.BY_KEY), "a gambit key shadows an opening key"
+
+
+def test_every_gambit_line_is_legal_and_canonical():
+    for gambit in gambits_mod.GAMBITS:
+        game = Game()
+        for ply, book_move in enumerate(gambit.moves, start=1):
+            move = from_san(game, book_move.san)
+            assert move is not None, f"{gambit.key} ply {ply}: illegal {book_move.san!r}"
+            assert to_san(game, move) == book_move.san, f"{gambit.key} ply {ply}"
+            game.move(move)
+
+
+def test_sacrifice_ply_belongs_to_the_gambiteer():
+    for gambit in gambits_mod.GAMBITS:
+        assert 0 <= gambit.sacrifice_ply < len(gambit.moves), gambit.key
+        mover = Color.WHITE if gambit.sacrifice_ply % 2 == 0 else Color.BLACK
+        assert mover is gambit.hero, f"{gambit.key}: sacrifice is not the hero's move"
+
+
+def test_gambiteer_actually_ends_up_down_material():
+    """A gambit that costs nothing is not a gambit — except the Queen's,
+    which is in the set precisely to make that point."""
+    for gambit in gambits_mod.GAMBITS:
+        final = _material_count(replay(gambit.sans))
+        sign = 1 if gambit.hero is Color.WHITE else -1
+        if gambit.soundness is gambits_mod.Soundness.NOT_A_GAMBIT:
+            assert final == 0, f"{gambit.key} should end level, got {final:+d}"
+        else:
+            assert final * sign < 0, f"{gambit.key} is not down material ({final:+d})"
+
+
+def test_stated_cost_matches_the_board():
+    """The prose says 'one pawn' or 'two pawns'; the position must agree."""
+    expected = {"evans": 1, "kingsgambit": 1, "danish": 2, "smithmorra": 1,
+                "marshall": 1, "benko": 1, "budapest": 1, "englund": 1,
+                "queensgambit": 0}
+    for gambit in gambits_mod.GAMBITS:
+        final = abs(_material_count(replay(gambit.sans)))
+        assert final == expected[gambit.key], f"{gambit.key}: board says {final}"
+
+
+def test_gambits_are_reachable_through_learn_and_drill():
+    for gambit in gambits_mod.GAMBITS:
+        line = resolve(gambit.key)
+        assert line is not None and line.key == gambit.key
+        assert line.plans, f"{gambit.key} exposes no plans via its Line view"
+
+
+def test_every_gambit_has_the_teaching_fields():
+    for gambit in gambits_mod.GAMBITS:
+        assert gambit.compensation, gambit.key
+        assert gambit.test.strip() and gambit.verdict.strip(), gambit.key
+        assert gambit.cost.strip(), gambit.key
+
+
+def test_soundness_spread_covers_the_range():
+    """The set is meant to contrast good and bad sacrifices, not just list
+    famous ones — if every entry were 'Sound' the mode would teach nothing."""
+    present = {g.soundness for g in gambits_mod.GAMBITS}
+    assert gambits_mod.Soundness.SOUND in present
+    assert gambits_mod.Soundness.DUBIOUS in present
+    assert gambits_mod.Soundness.NOT_A_GAMBIT in present
+    assert len(present) >= 4
+
+
+def test_show_gambit_renders_without_pausing():
+    import contextlib
+    import io
+
+    for gambit in gambits_mod.GAMBITS:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            show_gambit(gambit, pause=False)
+        out = buf.getvalue()
+        assert "THE SACRIFICE" in out, gambit.key
+        assert gambit.test[:20] in out, gambit.key
+        assert "Material:" in out, gambit.key
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
