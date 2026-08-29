@@ -28,6 +28,7 @@ from .render import (
     RED,
     YELLOW,
     board_text,
+    emphasize,
     movelist,
     paint,
     wrap,
