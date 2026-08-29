@@ -19,7 +19,9 @@ from chess.constants import Color
 from chess.game import Game
 
 from . import book as book_mod
+from . import gambits as gambits_mod
 from .book import PRINCIPLES, BookMove, Line
+from .gambits import Gambit, Soundness
 from .render import (
     BOLD,
     CYAN,
