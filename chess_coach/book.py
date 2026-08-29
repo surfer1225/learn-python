@@ -479,7 +479,7 @@ LINES: Tuple[Line, ...] = (
             BookMove("Bf4", "The defining move. Getting the bishop *outside* the pawn chain before playing e3 — do this in the wrong order and the bishop is buried for the whole game.",
                      (("e3", "The move-order error. After 2.e3 the c1 bishop is locked behind its own pawns and the London has already failed."),)),
             BookMove("Nf6", "Black develops naturally."),
-            BookMove("e3", "*Now* the pawn goes to e3, supporting d4 and opening the f1 bishop. The bishop on f4 is already safely outside."),
+            BookMove("e3", "Only now does the pawn go to e3, supporting d4 and opening the f1 bishop. The bishop on f4 is already safely outside the chain."),
             BookMove("e6", "Black mirrors the solid setup."),
             BookMove("Nf3", "Completing the kingside development."),
             BookMove("c5", "Black's standard challenge to the d4 pawn."),
