@@ -5,17 +5,20 @@ A terminal coach that teaches openings by making you play them, not read them.
 ```
 python -m chess_coach                     # interactive
 python -m chess_coach --list              # what's in the repertoire
+python -m chess_coach --gambits           # the gambits, by soundness
+python -m chess_coach --gambit evans      # show one gambit's trade
 python -m chess_coach --drill italian     # straight into a drill
 python -m chess_coach --learn kid --no-pause
 python -m chess_coach --selftest          # validate the book against the engine
 ```
 
-## The three modes
+## The four modes
 
 | Mode | What it does | When to use it |
 | --- | --- | --- |
 | `learn <key>` | Walks the line move by move with the reasoning and the traps | First encounter with an opening |
 | `drill <key>` | You play your side from memory; the coach replies and corrects | Every session after the first |
+| `gambit <key>` | Shows a sacrifice: what it costs, what it buys, and whether that's a fair price | Understanding *why* a sacrifice works |
 | `explore` | Free play; the coach names which openings are still live and flags the move that leaves the book | Reviewing one of your own games |
 
 `drill` is the one that works. Reading a line teaches you to *recognise* it;
