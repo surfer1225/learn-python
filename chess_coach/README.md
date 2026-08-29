@@ -53,13 +53,38 @@ rather than thirty disconnected fragments.
 Plus `principles` — the general rules that keep you alive when your opponent
 leaves the book on move three, which they will.
 
+## Gambits
+
+Nine gambits, deliberately spanning the quality range rather than just listing
+famous ones. Each shows the trade explicitly — the board pauses at the moment
+of sacrifice with the square marked — and ends with the critical test and a
+verdict.
+
+| Soundness | Gambits |
+| --- | --- |
+| **Sound** — real compensation, played at the top | `evans`, `marshall` |
+| **Sharp** — balanced, but whoever knows it better wins | `kingsgambit`, `danish`, `smithmorra`, `budapest` |
+| **Positional** — pressure that survives into the endgame | `benko` |
+| **Dubious** — a trap; refuted by accurate play | `englund` |
+| **Not really a gambit** — the material comes straight back | `queensgambit` |
+
+The last two rows carry the lesson. The Englund shows what *insufficient*
+compensation looks like, and the Queen's Gambit is in the set because it is
+famously misnamed — the pawn cannot be held, so nothing is actually given. Put
+next to the Evans, they sharpen the definition: a gambit is material for
+something else, and you have to be able to name the something else.
+
+Gambit keys work with `learn` and `drill` too — `drill evans` treats it as an
+ordinary line.
+
 ## How it's built
 
 ```
 book.py      the repertoire: pure data, one sentence of "why" per move
+gambits.py   the gambits: sacrifice ply, cost, compensation, verdict
 san.py       Standard Algebraic Notation <-> the engine's Move objects
 render.py    terminal board drawing
-coach.py     the three modes, the REPL, and the self-check
+coach.py     the four modes, the REPL, and the self-check
 ```
 
 **The engine is reused from `chess/`, not reimplemented.** Legality, check,
