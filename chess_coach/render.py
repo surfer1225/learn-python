@@ -116,17 +116,18 @@ def movelist(sans: list[str]) -> str:
 
 
 def wrap(text: str, width: int = 76, indent: str = "") -> str:
-    """Minimal word wrap — avoids a textwrap import for two call sites."""
-    words, lines, current = text.split(), [], indent
-    for word in words:
-        candidate = f"{current} {word}".strip() if current.strip() else indent + word
-        if len(candidate) > width and current.strip():
+    """Minimal word wrap that preserves `indent` on every line."""
+    words = text.split()
+    if not words:
+        return ""
+    lines, current = [], indent + words[0]
+    for word in words[1:]:
+        if len(current) + 1 + len(word) > width:
             lines.append(current)
             current = indent + word
         else:
-            current = candidate
-    if current.strip():
-        lines.append(current)
+            current += " " + word
+    lines.append(current)
     return "\n".join(lines)
 
 
