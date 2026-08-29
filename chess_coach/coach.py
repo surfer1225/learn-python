@@ -280,7 +280,7 @@ def explore() -> None:
         if candidates:
             names = ", ".join(c.name for c in candidates[:3])
             more = f" (+{len(candidates) - 3} more)" if len(candidates) > 3 else ""
-            print(f"   {paint('In book:', GREEN)} {names}{more}")
+            _respond("In book:", f"{names}{more}", GREEN)
         elif session.played:
             print(f"   {paint('Out of book.', YELLOW)} No line in the repertoire plays this.")
 
