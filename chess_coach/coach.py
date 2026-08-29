@@ -479,6 +479,9 @@ def show_principles() -> None:
 HELP = """
 Commands
    list                 the openings in the repertoire
+   gambits              the gambits, grouped by how sound they are
+   gambit <key>         show a gambit: what it costs, what it buys
+   gambit random        a gambit picked at random
    learn <key>          walk through a line with the reasoning
    drill <key>          play your side from memory; I correct you
    explore              free play, with the opening named as you go
@@ -486,6 +489,8 @@ Commands
    random               drill a line picked at random
    help                 this text
    quit                 leave
+
+Gambit keys also work with learn and drill: `drill evans`.
 """
 
 
