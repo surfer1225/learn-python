@@ -12,7 +12,18 @@ import argparse
 import sys
 
 from . import book as book_mod
-from .coach import drill, explore, learn, list_lines, repl, selftest
+from . import gambits as gambits_mod
+from .coach import (
+    drill,
+    explore,
+    learn,
+    list_gambits,
+    list_lines,
+    repl,
+    resolve,
+    selftest,
+    show_gambit,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
