@@ -7,6 +7,7 @@ headlessly in tests: nothing here is imported for correctness, only for looks.
 from __future__ import annotations
 
 import os
+import re
 import sys
 from typing import Iterable, Optional, Set
 
