@@ -71,6 +71,20 @@ def _show_board(session: Session, flipped: bool, hint=None) -> None:
     print()
 
 
+def resolve(key: str) -> Optional[Line]:
+    """Find a key in the repertoire or among the gambits.
+
+    Gambits expose a plain `Line` view, so `learn evans` and `drill evans`
+    work exactly like any other opening — only the `gambit` command uses the
+    richer sacrifice-aware presentation.
+    """
+    line = book_mod.get(key)
+    if line is not None:
+        return line
+    gambit = gambits_mod.get(key)
+    return gambit.line if gambit else None
+
+
 def _say(text: str) -> None:
     print(emphasize(wrap(text, indent="   ")))
 
