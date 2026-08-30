@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LRU vs LFU — side by side</title>
+<style>
+  :root {
+    --bg:        #0f1115;
+    --panel:     #171a21;
+    --panel-2:   #1e222b;
+    --line:      #2a2f3a;
+    --ink:       #e6e8ee;
+    --ink-dim:   #939aab;
+    --accent:    #6aa9ff;
+    --hit:       #4bbf87;
+    --evict:     #e2607a;
+    --warm:      #e8b04b;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 28px 24px 60px;
+    background: var(--bg); color: var(--ink);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  h1 { font-size: 22px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .sub { color: var(--ink-dim); margin: 0 0 22px; max-width: 860px; }
+  .sub code { font-family: var(--mono); font-size: 13px; color: var(--ink); }
+
+  /* ---------- controls ---------- */
+  .controls {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 18px;
+  }
+  button {
+    font: 600 13px/1 inherit; color: var(--ink);
+    background: var(--panel-2); border: 1px solid var(--line);
+    padding: 9px 14px; border-radius: 7px; cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  button:hover:not(:disabled) { background: #262b36; border-color: #3a4150; }
+  button:disabled { opacity: .4; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #06213f; }
+  button.primary:hover { background: #7db4ff; }
+  .spacer { flex: 1; }
+  label { color: var(--ink-dim); font-size: 13px; display: flex; align-items: center; gap: 7px; }
+  input[type=range] { accent-color: var(--accent); width: 110px; }
+
+  /* ---------- op tape ---------- */
+  .tape { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 20px; }
+  .op {
+    font: 600 12px/1 var(--mono); padding: 7px 9px; border-radius: 6px;
+    background: var(--panel); border: 1px solid var(--line); color: var(--ink-dim);
+    transition: all .2s;
+  }
+  .op.done { color: var(--ink); border-color: #39414f; }
+  .op.current {
+    background: var(--accent); border-color: var(--accent);
+    color: #06213f; transform: translateY(-2px);
+  }
+
+  /* ---------- panels ---------- */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 940px) { .grid { grid-template-columns: 1fr; } }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 18px; min-height: 340px;
+  }
+  .panel h2 { margin: 0 0 2px; font-size: 17px; }
+  .panel .rule { color: var(--ink-dim); font-size: 13px; margin: 0 0 16px; }
+  .panel .rule b { color: var(--ink); font-weight: 600; }
+
+  .lbl {
+    font: 600 10px/1 var(--mono); letter-spacing: .09em; text-transform: uppercase;
+    color: var(--ink-dim); margin: 16px 0 8px;
+  }
+
+  /* ---------- nodes ---------- */
+  .row { display: flex; align-items: center; gap: 8px; min-height: 52px; flex-wrap: wrap; }
+  .node {
+    position: relative; min-width: 52px; padding: 9px 11px; border-radius: 8px;
+    background: var(--panel-2); border: 1px solid #39414f;
+    text-align: center; font-family: var(--mono);
+  }
+  .node .k { font-size: 16px; font-weight: 700; }
+  .node .v { font-size: 10px; color: var(--ink-dim); margin-top: 2px; }
+  .node.hit   { background: #143a2a; border-color: var(--hit); }
+  .node.new   { background: #123048; border-color: var(--accent); }
+  .node.evict { background: #3d1622; border-color: var(--evict); }
+  .arrow { color: #4a5262; font-family: var(--mono); font-size: 13px; }
+  .empty { color: #4a5262; font-family: var(--mono); font-size: 13px; }
+
+  /* ---------- LFU buckets ---------- */
+  .bucket {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 9px; border-radius: 8px; margin-bottom: 6px;
+    background: #14171d; border: 1px solid transparent;
+  }
+  .bucket.is-min { border-color: var(--warm); background: #241f14; }
+  .bucket .tag {
+    font: 700 11px/1 var(--mono); color: var(--ink-dim);
+    min-width: 58px; white-space: nowrap;
+  }
+  .bucket.is-min .tag { color: var(--warm); }
+
+  /* ---------- verdict ---------- */
+  .verdict {
+    margin-top: 14px; padding: 10px 12px; border-radius: 8px;
+    font-size: 13px; min-height: 40px;
+    background: #14171d; border: 1px solid var(--line); color: var(--ink-dim);
+  }
+  .verdict.evicted { border-color: var(--evict); color: #ffc4d0; }
+  .verdict b { font-family: var(--mono); color: var(--ink); }
+
+  /* ---------- divergence banner ---------- */
+  .banner {
+    margin-top: 20px; padding: 16px 18px; border-radius: 10px;
+    background: #24191f; border: 1px solid var(--evict);
+    opacity: 0; transform: translateY(6px);
+    transition: opacity .35s, transform .35s;
+  }
+  .banner.show { opacity: 1; transform: none; }
+  .banner h3 { margin: 0 0 6px; font-size: 15px; color: #ffc4d0; }
+  .banner p { margin: 0; color: var(--ink-dim); font-size: 13.5px; }
+  .banner code { font-family: var(--mono); color: var(--ink); }
+
+  .foot { margin-top: 26px; color: var(--ink-dim); font-size: 13px; max-width: 900px; }
+  .foot b { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<h1>LRU vs LFU — the same access pattern, side by side</h1>
+<p class="sub">
+  Both caches hold <b>3</b> keys and receive an identical sequence. Watch what each one
+  throws away when <code>put D</code> arrives — they disagree, and the reason they
+  disagree <em>is</em> the difference between the two policies.
+</p>
+
+<div class="controls">
+  <button id="play" class="primary">▶ Play</button>
+  <button id="step">Step →</button>
+  <button id="reset">Reset</button>
+  <div class="spacer"></div>
+  <label>Speed <input id="speed" type="range" min="250" max="1800" value="950" step="50"></label>
+</div>
+
+<div class="tape" id="tape"></div>
+
+<div class="grid">
+  <!-- ============ LRU ============ -->
+  <div class="panel">
+    <h2>LRU — Least Recently Used</h2>
+    <p class="rule">Evicts the key <b>untouched for the longest</b>. Recency only; it does not count hits.</p>
+
+    <div class="lbl">hash map — key → node</div>
+    <div class="row" id="lru-map"></div>
+
+    <div class="lbl">doubly linked list — MRU ⟵⟶ LRU</div>
+    <div class="row" id="lru-list"></div>
+
+    <div class="verdict" id="lru-verdict">Idle.</div>
+  </div>
+
+  <!-- ============ LFU ============ -->
+  <div class="panel">
+    <h2>LFU — Least Frequently Used</h2>
+    <p class="rule">Evicts the <b>least-used</b> key; ties broken by recency. One DLL per frequency.</p>
+
+    <div class="lbl">hash map — key → node</div>
+    <div class="row" id="lfu-map"></div>
+
+    <div class="lbl">frequency buckets — <span style="color:var(--warm)">min_freq highlighted</span></div>
+    <div id="lfu-buckets"></div>
+
+    <div class="verdict" id="lfu-verdict">Idle.</div>
+  </div>
+</div>
+
+<div class="banner" id="banner">
+  <h3>They evicted different keys.</h3>
+  <p id="banner-text"></p>
+</div>
+
+<p class="foot">
+  <b>Why a doubly linked list?</b> Both policies need O(1) removal of an <em>arbitrary</em> node.
+  The hash map gives you the node pointer in O(1); the <code>prev</code> link lets you splice it out
+  without walking. Neither structure alone is enough.
+  <br><br>
+  <b>Why LFU is O(1) and not O(log n):</b> <code>min_freq</code> is never searched for. It resets to 1
+  on every insert, and only ever increments by 1 when a promotion empties its bucket. That single
+  invariant is what removes the need for a heap — and it is where nearly every buggy LFU goes wrong.
+</p>
+
+<script>
+"use strict";
+
+const CAP = 3;
+
+// A sequence built so the two policies must disagree. A is hit most (so LFU
+// keeps it) but becomes the least recent (so LRU throws it out first).
+const OPS = [
+  ["put","A"], ["put","B"], ["put","C"],
+  ["get","A"], ["get","A"], ["get","A"],
+  ["get","B"], ["get","B"],
+  ["get","C"],
+  ["put","D"],
+];
+
+// ---------------------------------------------------------------- LRU model
+class LRU {
+  constructor(cap){ this.cap = cap; this.order = []; }   // order[0] = MRU
+  touch(k){ const i = this.order.indexOf(k); if (i > -1) this.order.splice(i,1); this.order.unshift(k); }
+  get(k){
+    if (!this.order.includes(k)) return { kind:"miss", key:k };
+    this.touch(k);
+    return { kind:"hit", key:k };
+  }
+  put(k){
+    if (this.order.includes(k)) { this.touch(k); return { kind:"update", key:k }; }
+    let evicted = null;
+    if (this.order.length >= this.cap) evicted = this.order.pop();   // tail = LRU
+    this.order.unshift(k);
+    return { kind:"insert", key:k, evicted };
+  }
+  keys(){ return this.order; }
+}
+
+// ---------------------------------------------------------------- LFU model
+class LFU {
+  constructor(cap){ this.cap = cap; this.freq = new Map(); this.buckets = new Map(); this.minFreq = 0; }
+  _bucket(f){ if (!this.buckets.has(f)) this.buckets.set(f, []); return this.buckets.get(f); }
+  _promote(k){
+    const f = this.freq.get(k);
+    const from = this._bucket(f);
+    from.splice(from.indexOf(k), 1);
+    if (from.length === 0) {
+      this.buckets.delete(f);
+      if (this.minFreq === f) this.minFreq = f + 1;   // the O(1) rule
+    }
+    this.freq.set(k, f + 1);
+    this._bucket(f + 1).unshift(k);                   // front = most recent in bucket
+  }
+  get(k){
+    if (!this.freq.has(k)) return { kind:"miss", key:k };
+    this._promote(k);
+    return { kind:"hit", key:k };
+  }
+  put(k){
+    if (this.freq.has(k)) { this._promote(k); return { kind:"update", key:k }; }
+    let evicted = null;
+    if (this.freq.size >= this.cap) {
+      const victim = this._bucket(this.minFreq);
+      evicted = victim.pop();                          // tail = least recent at min freq
+      if (victim.length === 0) this.buckets.delete(this.minFreq);
+      this.freq.delete(evicted);
+    }
+    this.freq.set(k, 1);
+    this._bucket(1).unshift(k);
+    this.minFreq = 1;
+    return { kind:"insert", key:k, evicted };
+  }
+  keys(){ return [...this.freq.keys()]; }
+}
+
+// ---------------------------------------------------------------- rendering
+const $ = (id) => document.getElementById(id);
+let lru, lfu, cursor, timer = null, flash = {};
+
+function nodeEl(key, sub, cls){
+  const d = document.createElement("div");
+  d.className = "node" + (cls ? " " + cls : "");
+  d.innerHTML = `<div class="k">${key}</div>` + (sub ? `<div class="v">${sub}</div>` : "");
+  return d;
+}
+
+function renderTape(){
+  const tape = $("tape");
+  tape.innerHTML = "";
+  OPS.forEach(([op,k], i) => {
+    const d = document.createElement("div");
+    d.className = "op" + (i < cursor ? " done" : "") + (i === cursor - 1 ? " current" : "");
+    d.textContent = `${op} ${k}`;
+    tape.appendChild(d);
+  });
+}
+
+function renderLRU(){
+  const map = $("lru-map"); map.innerHTML = "";
+  const list = $("lru-list"); list.innerHTML = "";
+  const keys = lru.keys();
+
+  if (!keys.length) { map.innerHTML = '<span class="empty">empty</span>'; }
+  [...keys].sort().forEach(k => map.appendChild(nodeEl(k, "→ node", flash.lruKey === k ? flash.lruCls : "")));
+
+  if (!keys.length) { list.innerHTML = '<span class="empty">head ⟷ tail</span>'; return; }
+  keys.forEach((k, i) => {
+    const tag = i === 0 ? "MRU" : (i === keys.length - 1 ? "LRU" : "");
+    list.appendChild(nodeEl(k, tag, flash.lruKey === k ? flash.lruCls : ""));
+    if (i < keys.length - 1) {
+      const a = document.createElement("span"); a.className = "arrow"; a.textContent = "⟷";
+      list.appendChild(a);
+    }
+  });
+}
+
+function renderLFU(){
+  const map = $("lfu-map"); map.innerHTML = "";
+  const box = $("lfu-buckets"); box.innerHTML = "";
+  const keys = lfu.keys();
+
+  if (!keys.length) { map.innerHTML = '<span class="empty">empty</span>'; }
+  [...keys].sort().forEach(k =>
+    map.appendChild(nodeEl(k, "f=" + lfu.freq.get(k), flash.lfuKey === k ? flash.lfuCls : "")));
+
+  const freqs = [...lfu.buckets.keys()].sort((a,b) => a - b);
+  if (!freqs.length) { box.innerHTML = '<span class="empty">no buckets</span>'; return; }
+  freqs.forEach(f => {
+    const row = document.createElement("div");
+    row.className = "bucket" + (f === lfu.minFreq ? " is-min" : "");
+    const tag = document.createElement("div");
+    tag.className = "tag";
+    tag.textContent = `freq ${f}` + (f === lfu.minFreq ? " ◂min" : "");
+    row.appendChild(tag);
+    lfu.buckets.get(f).forEach((k, i) => {
+      const arr = lfu.buckets.get(f);
+      const sub = i === 0 ? "recent" : (i === arr.length - 1 && arr.length > 1 ? "oldest" : "");
+      row.appendChild(nodeEl(k, sub, flash.lfuKey === k ? flash.lfuCls : ""));
+    });
+    box.appendChild(row);
+  });
+}
+
+function describe(r, policy){
+  if (r.kind === "hit")    return `<b>${r.key}</b> hit — ${policy === "lru" ? "moved to the head" : "promoted a frequency"}.`;
+  if (r.kind === "update") return `<b>${r.key}</b> already present — refreshed.`;
+  if (r.kind === "miss")   return `<b>${r.key}</b> miss.`;
+  if (r.evicted)           return `Inserted <b>${r.key}</b>, evicted <b>${r.evicted}</b>.`;
+  return `Inserted <b>${r.key}</b>, room to spare.`;
+}
+
+function render(){
+  renderTape(); renderLRU(); renderLFU();
+}
+
+function stepOnce(){
+  if (cursor >= OPS.length) { stop(); return; }
+  const [op, key] = OPS[cursor];
+  const a = op === "get" ? lru.get(key) : lru.put(key);
+  const b = op === "get" ? lfu.get(key) : lfu.put(key);
+  cursor++;
+
+  flash = {
+    lruKey: a.evicted || a.key, lruCls: a.evicted ? "evict" : (a.kind === "insert" ? "new" : "hit"),
+    lfuKey: b.evicted || b.key, lfuCls: b.evicted ? "evict" : (b.kind === "insert" ? "new" : "hit"),
+  };
+  render();
+  $("lru-verdict").innerHTML = describe(a, "lru");
+  $("lfu-verdict").innerHTML = describe(b, "lfu");
+  $("lru-verdict").className = "verdict" + (a.evicted ? " evicted" : "");
+  $("lfu-verdict").className = "verdict" + (b.evicted ? " evicted" : "");
+
+  if (a.evicted && b.evicted && a.evicted !== b.evicted) {
+    $("banner-text").innerHTML =
+      `LRU dropped <code>${a.evicted}</code> — it had not been touched since the very ` +
+      `first round, so by recency it was the coldest key. LFU kept <code>${a.evicted}</code> ` +
+      `precisely because it was hit the most, and dropped <code>${b.evicted}</code> instead, ` +
+      `which had the fewest hits. Same history, opposite conclusion: <b>recency and ` +
+      `frequency are not proxies for each other.</b>`;
+    $("banner").classList.add("show");
+  }
+
+  // clear the flash so the next frame is calm
+  setTimeout(() => { flash = {}; render(); }, Math.min(520, +$("speed").value - 120));
+  if (cursor >= OPS.length) stop();
+}
+
+function play(){
+  if (cursor >= OPS.length) reset();
+  $("play").textContent = "❚❚ Pause";
+  timer = setInterval(stepOnce, +$("speed").value);
+  stepOnce();
+}
+function stop(){
+  clearInterval(timer); timer = null;
+  $("play").textContent = cursor >= OPS.length ? "↻ Replay" : "▶ Play";
+}
+function reset(){
+  clearInterval(timer); timer = null;
+  lru = new LRU(CAP); lfu = new LFU(CAP); cursor = 0; flash = {};
+  $("banner").classList.remove("show");
+  $("lru-verdict").className = $("lfu-verdict").className = "verdict";
+  $("lru-verdict").textContent = $("lfu-verdict").textContent = "Idle.";
+  $("play").textContent = "▶ Play";
+  render();
+}
+
+$("play").onclick  = () => timer ? stop() : play();
+$("step").onclick  = () => { stop(); stepOnce(); };
+$("reset").onclick = reset;
+$("speed").oninput = () => { if (timer) { clearInterval(timer); timer = setInterval(stepOnce, +$("speed").value); } };
+
+reset();
+</script>
+</body>
+</html>
