@@ -866,10 +866,4 @@ def selftest(verbose: bool = True) -> int:
 
 def _material_count(game: Game) -> int:
     """White's material minus Black's, in pawns."""
-    score = 0
-    for row in game.board.squares:
-        for piece in row:
-            if piece is not None:
-                value = _VALUES[piece.letter]
-                score += value if piece.color is Color.WHITE else -value
-    return score
+    return material_count(game.board)
