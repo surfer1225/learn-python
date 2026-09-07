@@ -115,14 +115,80 @@ something else, and you have to be able to name the something else.
 Gambit keys work with `learn` and `drill` too — `drill evans` treats it as an
 ordinary line.
 
+## The AI coach
+
+```bash
+pip install anthropic
+
+export ANTHROPIC_API_KEY=sk-ant-...          # or, for a Vertex deployment:
+export ANTHROPIC_VERTEX_PROJECT_ID=my-proj   # region defaults to CLOUD_ML_REGION
+```
+
+Then `--ai-status` will say `claude-opus-5 via Anthropic API` instead of `off`.
+`CHESS_COACH_MODEL` picks a different model, `coach off` mutes it mid-session
+without dropping the connection, and `--no-ai` never calls it at all.
+
+Four things it is asked, none of which the book can do:
+
+| | |
+| --- | --- |
+| `ask <question>` | Anything, about the position on the screen. Keeps a short thread, so follow-ups work |
+| `why` (in a drill) | The book's one sentence, opened out into the plan behind it |
+| `review` | A verdict on the whole game — the recurring habit, not a list of moves |
+| `spar` | Plays the other side and comments as it goes, at `beginner`, `club` or `strong` |
+
+### The model does not get to assert a move
+
+A model asked about chess will eventually name a move that is not on the board,
+and it will do so in fluent, confident prose. That is the entire risk of putting
+one in front of a learner, so the package's existing rule — *the engine has the
+final say* — is pointed at it directly.
+
+No answer arrives as prose to be scraped. Every reply is schema-constrained JSON
+with three fields: the explanation, one recommended move, and one variation. The
+last two go through the engine before the learner sees them.
+
+- The **move** is looked up in the position's legal moves and re-rendered in the
+  engine's own spelling. An impossible move is dropped, and the learner is told
+  it was dropped.
+- The **variation** is replayed ply by ply from the current position and cut at
+  the first move that will not play. This is the same replay `--selftest` runs
+  against the book, pointed at model output instead of hand-written data —
+  which is the right shape for it, since the model is exactly as capable of a
+  typo and rather more prolific.
+
+The prose is printed as written. An opinion about a plan is not the kind of
+claim an engine can adjudicate, and pretending otherwise would be its own kind
+of dishonesty.
+
+What makes the check possible is that the model is handed the complete legal
+move list for the position (`position.py`) alongside the FEN. That turns "what
+should I play" from a recall problem into a selection problem, and it means
+there is something concrete to check the answer against.
+
+### What it costs
+
+One request per question, and — importantly — **one per sparring ply, not two**.
+The coach's assessment of your move and its own reply come out of the same call.
+Splitting them would double the cost and the wait to buy a separation nobody
+sees, and the assessment is sharper for having been written by the pass that
+also had to find a move.
+
+The system prompt (persona, house style, repertoire index) is identical on every
+call and is sent with a cache breakpoint, so a long session pays for it once.
+The volatile part — the position and the question — sits after it.
+
 ## How it's built
 
 ```
 book.py      the repertoire: pure data, one sentence of "why" per move
 gambits.py   the gambits: sacrifice ply, cost, compensation, verdict
 san.py       Standard Algebraic Notation <-> the engine's Move objects
+position.py  FEN and the legal move list: the position as the model sees it
+llm.py       the connection to the model, and a fake one for the tests
+tutor.py     the AI coach: prompts in, engine-checked answers out
 render.py    terminal board drawing
-coach.py     the four modes, the REPL, and the self-check
+coach.py     the five modes, the REPL, and the self-check
 ```
 
 **The engine is reused from `chess/`, not reimplemented.** Legality, check,
