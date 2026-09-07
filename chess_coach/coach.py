@@ -710,6 +710,132 @@ def explore() -> None:
                     _show_answer(critique, before)
 
 
+# --- spar ------------------------------------------------------------------
+def spar(hero: Color = Color.WHITE, *, level: str = "club") -> None:
+    """A whole game against the AI coach, with a word on every move you play.
+
+    The other three modes stop where the book stops, around move ten. This one
+    does not stop, which is the point: openings are only worth drilling if you
+    can be told what you did with the position afterwards.
+
+    One request per ply, not two. The coach's assessment of your move and its
+    own reply come out of the same call — splitting them would double the cost
+    and the wait to buy a separation nobody sees, and the assessment is sharper
+    for having been written by the pass that also had to find a move.
+    """
+    _heading("\nSparring")
+    if not ai_ready():
+        _respond("No AI coach:", ai_status(), RED)
+        print(paint("   spar is the one mode that needs the model. The other three do not.", DIM))
+        return
+
+    _say(
+        f"You are {hero.value.title()}; I am {hero.opponent.value.title()}, playing at "
+        f"*{level}* strength. I will say what I make of each of your moves before I "
+        "reply. 'ask <question>' for anything else, 'review' for a verdict on the "
+        "game so far, 'coach off' to play in silence, 'resign' or 'quit' to stop."
+    )
+    print(paint(f"   AI coach: {ai_status()}", DIM))
+
+    tutor().forget()  # a new game is a new conversation
+    session = Session()
+    flipped = hero is Color.BLACK
+    last_move: Optional[str] = None
+
+    while not session.game.is_over:
+        if session.turn is not hero:
+            if not _coach_ply(session, last_move, level):
+                return
+            last_move = None
+            continue
+
+        _show_board(session, flipped)
+        number = len(session.played) // 2 + 1
+        dots = "." if session.turn is Color.WHITE else "..."
+        try:
+            raw = input(paint(f"   {number}{dots} your move: ", BOLD)).strip()
+        except EOFError:
+            print()
+            return
+        if not raw:
+            continue
+        low = raw.lower()
+        if low in ("quit", "q", "exit", "resign"):
+            break
+        if low.startswith("ask"):
+            _ask_about(session, raw[3:])
+            continue
+        if low == "review":
+            _review(session)
+            continue
+        if low in ("coach on", "coach off"):
+            set_ai(low.endswith("on"))
+            continue
+        if not session.push(raw):
+            print(f"   {paint('Not a legal move.', RED)}")
+            continue
+        last_move = session.played[-1]
+
+    _show_board(session, flipped)
+    print(paint(f"   {_result(session)}", BOLD))
+    if session.played:
+        print("   " + movelist(session.played))
+    if session.played and ai_ready():
+        try:
+            if input(paint("\n   [enter] for the coach's review of the game, 'n' to skip  ", DIM)).strip().lower() != "n":
+                _review(session, note=f"The game has just ended: {_result(session)}")
+        except EOFError:
+            pass
+
+
+def _coach_ply(session: Session, learner_move: Optional[str], level: str) -> bool:
+    """The coach's half of a ply. False means it could not continue."""
+    snapshot = _snapshot(session)
+    answer = _consult(tutor().spar, snapshot, learner_move=learner_move, level=level)
+    if answer is None:
+        return False
+    if answer.text:
+        _respond("Coach:", answer.text, CYAN)
+
+    chosen = answer.move
+    if chosen is None:
+        # Ask once more before giving up. The model is sampled, so a move that
+        # is not on the board is usually not repeated — and if it is, the game
+        # continues on a move the engine chose, with the learner told exactly
+        # that rather than left to wonder.
+        retry = _consult(tutor().spar, snapshot, learner_move=learner_move, level=level)
+        chosen = retry.move if retry else None
+        if chosen is None:
+            chosen = _fallback_move(session)
+            print(paint(f"   (no legal move came back from the coach; playing {chosen})", DIM))
+    session.push(chosen)
+    print(f"   I play {paint(chosen, BOLD)}")
+    return True
+
+
+def _fallback_move(session: Session) -> str:
+    """A move for the coach when the model will not supply a legal one.
+
+    Prefers a book continuation: an opening the learner is studying makes a
+    better sparring partner than a coin flip, and it keeps the game somewhere
+    the book coach can still comment.
+    """
+    for _line, book_move in book_mod.next_moves(session.played):
+        if from_san(session.game, book_move.san) is not None:
+            return book_move.san
+    moves = session.game.board.all_legal_moves(session.turn)
+    return to_san(session.game, random.choice(moves))
+
+
+def _result(session: Session) -> str:
+    game = session.game
+    if game.status is GameStatus.CHECKMATE and game.winner is not None:
+        return f"Checkmate — {game.winner.value.title()} wins."
+    if game.status is GameStatus.STALEMATE:
+        return "Stalemate — drawn."
+    return "Game stopped."
+
+
 # --- menus -----------------------------------------------------------------
 def list_lines() -> None:
     for side in (Color.WHITE, Color.BLACK):
