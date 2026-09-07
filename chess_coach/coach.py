@@ -627,8 +627,11 @@ def explore() -> None:
     _say(
         "Play any moves you like, for either side. I will tell you which "
         "openings are still in play and what the book recommends. 'book' lists "
-        "the options, 'back' undoes a move, 'quit' exits."
+        "the options, 'back' undoes a move, 'ask <question>' puts it to the AI "
+        "coach, 'review' asks for a verdict on the game so far, 'quit' exits."
     )
+    if ai_ready():
+        print(paint(f"   AI coach: {ai_status()}", DIM))
 
     session = Session()
     history: List[List[str]] = []
