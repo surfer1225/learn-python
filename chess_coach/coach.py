@@ -175,7 +175,7 @@ def ai_status() -> str:
     return tutor().describe() if _AI_ON else "muted ('coach on' to resume)"
 
 
-def set_ai(on: bool) -> None:
+def set_ai(on: bool, *, announce: bool = True) -> None:
     """Mute or unmute the AI coach without losing the connection.
 
     Worth having as a real toggle rather than an environment variable: every
@@ -184,7 +184,8 @@ def set_ai(on: bool) -> None:
     """
     global _AI_ON
     _AI_ON = on
-    print(paint(f"   AI coach: {ai_status()}", DIM))
+    if announce:
+        print(paint(f"   AI coach: {ai_status()}", DIM))
 
 
 def _snapshot(
