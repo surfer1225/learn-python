@@ -459,6 +459,39 @@ def drill(line: Line) -> None:
     print("   " + movelist(session.played))
     _show_plans(line)
 
+    # A run with corrections in it is the moment a review is worth most, and
+    # the moment the learner is least likely to think of asking. Offer it, but
+    # ask first — every call costs money and a wait.
+    if mistakes_made and ai_ready():
+        try:
+            if input(paint("\n   [enter] for the coach's take on that run, 'n' to skip  ", DIM)).strip().lower() != "n":
+                _review(
+                    session,
+                    note=f"The learner was drilling {line.name} and needed "
+                    f"{mistakes_made} correction(s).",
+                    studying=line.name,
+                )
+        except EOFError:
+            pass
+
+
+def _why_last(session: Session, line: Line, ply: int) -> None:
+    """'why' — the book's one sentence for the last move, opened out.
+
+    The book is terse on purpose: a paragraph per ply is not read in a drill.
+    This is the escape hatch for the ply where one sentence was not enough, and
+    it asks about the position *before* the move so the tutor can talk about
+    the choice rather than the fait accompli.
+    """
+    if ply == 0:
+        print("   Nothing played yet — 'hint' is the one you want.")
+        return
+    previous = line.moves[ply - 1]
+    snapshot = _snapshot(session, studying=line.name, history=session.played[:-1])
+    answer = _consult(tutor().deepen, snapshot, previous.san, previous.idea)
+    if answer:
+        _show_answer(answer, snapshot)
+
 
 def _hint_for(book_move: BookMove) -> str:
     """A nudge that does not give the move away: the piece and the idea."""
