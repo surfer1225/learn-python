@@ -34,7 +34,7 @@ from dataclasses import dataclass, field
 from typing import Callable, Iterator, List, Optional, Sequence
 
 from chess.constants import Color
-from chess.game import Game
+from chess.game import Game, GameStatus
 
 from . import book as book_mod
 from . import gambits as gambits_mod
