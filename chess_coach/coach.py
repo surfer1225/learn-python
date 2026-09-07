@@ -389,6 +389,15 @@ def drill(line: Line) -> None:
             previous = line.moves[ply - 1] if ply else None
             print(f"   {previous.idea if previous else 'Nothing played yet.'}")
             continue
+        if low == "why":
+            _why_last(session, line, ply)
+            continue
+        if low.startswith("ask"):
+            _ask_about(session, answer[3:], line.name)
+            continue
+        if low == "review":
+            _review(session, studying=line.name)
+            continue
 
         if normalize(answer) == normalize(book_move.san):
             session.push(book_move.san)
