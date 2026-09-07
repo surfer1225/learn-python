@@ -291,6 +291,11 @@ def _ask_about(session: "Session", question: str, studying: Optional[str] = None
         _show_answer(answer, snapshot)
 
 
+def ask(question: str) -> None:
+    """One question about the starting position — what `--ask` runs."""
+    _ask_about(Session(), question)
+
+
 def _review(session: "Session", note: str = "", studying: Optional[str] = None) -> None:
     """The `review` command: a verdict on the game, not on one move."""
     if not session.played:
