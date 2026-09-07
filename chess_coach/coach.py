@@ -590,22 +590,14 @@ def _soundness_colour(soundness: Soundness) -> str:
     }[soundness]
 
 
-# Standard piece values, used only to state the material count out loud.
-_VALUES = {"Q": 9, "R": 5, "B": 3, "N": 3, "P": 1, "K": 0}
-
-
 def _material_balance(session: Session) -> str:
-    """Who is up how much — the number the gambit is asking you to accept."""
-    score = 0
-    for row in session.game.board.squares:
-        for piece in row:
-            if piece is not None:
-                value = _VALUES[piece.letter]
-                score += value if piece.color is Color.WHITE else -value
-    if score == 0:
-        return "level"
-    leader = "White" if score > 0 else "Black"
-    return f"{leader} +{abs(score)} ({'pawn' if abs(score) == 1 else 'pawns'})"
+    """Who is up how much — the number the gambit is asking you to accept.
+
+    Counting lives in `position.py` because the tutor needs the same figure in
+    the same words; two implementations would eventually disagree in front of
+    the learner.
+    """
+    return material_phrase(session.game.board)
 
 
 def list_gambits() -> None:
