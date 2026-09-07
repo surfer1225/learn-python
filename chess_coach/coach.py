@@ -57,7 +57,7 @@ from .render import (
     paint,
     wrap,
 )
-from .san import from_san, normalize, play_san, replay, to_san
+from .san import from_san, normalize, replay, to_san
 from .tutor import Answer, Tutor
 
 BULLET = "  - "
