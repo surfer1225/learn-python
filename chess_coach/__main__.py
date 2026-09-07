@@ -74,7 +74,7 @@ def main(argv: list[str] | None = None) -> int:
         list_gambits()
         return 0
     if args.ask:
-        _ask_about(Session(), args.ask)
+        ask(args.ask)
         return 0
     if args.spar:
         spar(Color.BLACK if args.spar == "black" else Color.WHITE, level=args.level)
