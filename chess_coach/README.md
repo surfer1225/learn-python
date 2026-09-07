@@ -10,9 +10,32 @@ python -m chess_coach --gambit evans      # show one gambit's trade
 python -m chess_coach --drill italian     # straight into a drill
 python -m chess_coach --learn kid --no-pause
 python -m chess_coach --selftest          # validate the book against the engine
+
+python -m chess_coach --spar black        # a whole game against the AI coach
+python -m chess_coach --ask "how do I meet 1.d4?"
+python -m chess_coach --ai-status         # is the model reachable, and which one
 ```
 
-## The four modes
+## Two coaches
+
+There are two coaches in here and the split between them is the whole design.
+
+The **book coach** is data plus the engine. It is always right, always instant,
+always free, and it knows exactly thirteen openings. The **AI coach** is a
+language model. It knows every position there is, and it is the only one of the
+two that can be wrong.
+
+So they are asked different questions. Where they overlap, the book wins: a
+trap it has a refutation for gets the book's refutation, because that was
+written by someone who knew and it is the same every time. The model is asked
+only what the book cannot answer — why *your* move was worse, what the plan
+behind the one sentence actually is, and what to do in the several million
+positions nobody wrote down.
+
+The AI coach is optional. Without credentials the other four modes are
+untouched and the trainer says one line about what to set.
+
+## The five modes
 
 | Mode | What it does | When to use it |
 | --- | --- | --- |
@@ -20,14 +43,29 @@ python -m chess_coach --selftest          # validate the book against the engine
 | `drill <key>` | You play your side from memory; the coach replies and corrects | Every session after the first |
 | `gambit <key>` | Shows a sacrifice: what it costs, what it buys, and whether that's a fair price | Understanding *why* a sacrifice works |
 | `explore` | Free play; the coach names which openings are still live and flags the move that leaves the book | Reviewing one of your own games |
+| `spar` | A whole game against the AI coach, with a word on every move you play | After the book runs out, around move ten |
 
 `drill` is the one that works. Reading a line teaches you to *recognise* it;
 being asked for the move with nothing on screen but the board teaches you to
 *find* it. The coach grades three kinds of wrong differently:
 
 - **A known trap** gets its refutation ("4.Qxf7# is mate").
-- **A legal but inferior move** gets the book move and moves on.
+- **A legal but inferior move** gets the book move — and, if the AI coach is
+  connected, what the move cost you. This is the gap the book cannot close: it
+  carries a refutation for every trap it knows about, but a learner's inferior
+  move is usually not a trap, it is a sensible move that quietly concedes
+  something, and there is no way to enumerate those in advance.
 - **A typo or illegal move** gets a nudge and doesn't count against you.
+
+Real output, from `drill italian` after answering `Nc3` on move three:
+
+> Nc3 isn't a mistake — it's the Four Knights, fully sound, and you lose
+> nothing by force. What it costs you is your *plan*. The whole Giuoco Piano is
+> built on c3 and d4, hitting the centre with a pawn while the bishop on c4
+> already eyes f7. Put the knight on c3 and that c-pawn is locked in behind it
+> forever.
+>
+> `Move: Bc4`  ·  `Line: 3. Bc4 Bc5  4. c3 Nf6  5. d4 exd4  6. cxd4 Bb4+`
 
 ## The repertoire
 
