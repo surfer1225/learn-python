@@ -260,13 +260,18 @@ def test_forget_clears_the_thread():
     assert len(backend.calls[1]["messages"]) == 1
 
 
-def test_the_thread_is_bounded():
+def test_the_thread_is_bounded_and_always_opens_on_a_user_turn():
+    """The API rejects a conversation that starts with the assistant, so the
+    trim has to drop whole exchanges rather than single messages."""
     replies = [{"answer": "x", "move": "", "line": []} for _ in range(20)]
     backend = FakeBackend(replies)
     tutor = Tutor(backend)
     for i in range(20):
         tutor.ask(snapshot([]), f"question {i}")
-    assert len(backend.calls[-1]["messages"]) <= Tutor.THREAD_LIMIT
+    for call in backend.calls:
+        assert len(call["messages"]) <= Tutor.THREAD_LIMIT
+        assert call["messages"][0]["role"] == "user"
+        assert call["messages"][-1]["role"] == "user"
 
 
 def test_spar_asks_for_an_assessment_and_a_reply_in_one_call():
