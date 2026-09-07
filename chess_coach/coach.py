@@ -1,19 +1,37 @@
-"""The coach: three ways to work on an opening, plus a headless self-check.
+"""The coach: four ways to work on an opening, plus a headless self-check.
 
     learn <key>    walk the line move by move, with the reasoning
     drill <key>    you play your side from memory; the coach answers and corrects
     explore        free play from the start; the coach names what you are in
+    spar           a whole game against the AI coach, commented as you go
 
 `drill` is the mode that actually builds the skill. Reading a line teaches you
 to recognise it; being asked for the move with nothing on screen but the board
 teaches you to find it.
+
+Two coaches share this file, and the split between them is the design:
+
+* The **book coach** is everything above the `--- ai coach ---` divider. It is
+  data plus the engine, so it is always right, always instant, always free, and
+  knows exactly thirteen openings.
+* The **AI coach** (`tutor.py`) knows every position but is a language model,
+  so nothing it says about a *move* reaches the learner without the engine
+  agreeing first.
+
+Where they overlap, the book wins. A trap the book has a refutation for gets
+the book's refutation — it was written by someone who knew, it costs nothing,
+and it is the same every time. The model is asked only the questions the book
+cannot answer: why *your* move was worse, what the plan is behind the one
+sentence, and what to do in the several million positions nobody wrote down.
 """
 
 from __future__ import annotations
 
 import random
+import sys
+from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Callable, Iterator, List, Optional, Sequence
 
 from chess.constants import Color
 from chess.game import Game
@@ -22,6 +40,8 @@ from . import book as book_mod
 from . import gambits as gambits_mod
 from .book import PRINCIPLES, BookMove, Line
 from .gambits import Gambit, Soundness
+from .llm import LLMUnavailable
+from .position import Snapshot, material_count, material_phrase
 from .render import (
     BOLD,
     CYAN,
@@ -31,12 +51,14 @@ from .render import (
     YELLOW,
     board_text,
     bullet,
+    color_enabled,
     emphasize,
     movelist,
     paint,
     wrap,
 )
-from .san import from_san, normalize, play_san, to_san
+from .san import from_san, normalize, play_san, replay, to_san
+from .tutor import Answer, Tutor
 
 BULLET = "  - "
 
