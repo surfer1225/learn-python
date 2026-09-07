@@ -20,9 +20,8 @@ from chess.constants import Color
 from . import book as book_mod
 from . import gambits as gambits_mod
 from .coach import (
-    Session,
-    _ask_about,
     ai_status,
+    ask,
     drill,
     explore,
     learn,
