@@ -869,8 +869,21 @@ Commands
    help                 this text
    quit                 leave
 
+With the AI coach
+   spar [black]         a whole game against me, commented as you go
+   spar strong          the same, played harder (beginner | club | strong)
+   ask <question>       ask about the starting position
+   coach                is the AI coach connected, and to what
+   coach off / on       stop or resume calling the model
+
+Inside drill: 'why' opens out the book's sentence, 'ask <q>' asks anything,
+and a legal-but-wrong move gets told what it cost rather than just corrected.
+Inside explore and spar: 'ask <q>' and 'review' are always available.
+
 Gambit keys also work with learn and drill: `drill evans`.
 """
+
+_LEVELS = ("beginner", "club", "strong")
 
 
 def repl() -> None:
@@ -880,6 +893,7 @@ def repl() -> None:
         "where the pieces belong and which pawn break matters. Type 'list' to "
         "see the repertoire, or 'help' for commands."
     )
+    print(paint(f"   AI coach: {ai_status()}", DIM))
 
     while True:
         try:
