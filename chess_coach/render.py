@@ -106,13 +106,24 @@ def format_move_pair(number: int, white: str, black: Optional[str]) -> str:
     return f"{number}. {white}" + (f" {black}" if black else "")
 
 
-def movelist(sans: list[str]) -> str:
-    """Render a flat list of SAN plies as numbered move pairs."""
+def movelist(sans: list[str], *, start: int = 1, black_first: bool = False) -> str:
+    """Render a flat list of SAN plies as numbered move pairs.
+
+    `start` and `black_first` are for variations, which do not begin at move
+    one and need not begin with White. A line the coach offers from move 12 as
+    Black prints as '12... Nxe4  13. Bd3'; numbering it from one would point
+    the learner at the wrong part of their own game.
+    """
     out = []
-    for i in range(0, len(sans), 2):
-        white = sans[i]
-        black = sans[i + 1] if i + 1 < len(sans) else None
-        out.append(format_move_pair(i // 2 + 1, white, black))
+    index, number = 0, start
+    if black_first and sans:
+        out.append(f"{number}... {sans[0]}")
+        index, number = 1, number + 1
+    while index < len(sans):
+        white = sans[index]
+        black = sans[index + 1] if index + 1 < len(sans) else None
+        out.append(format_move_pair(number, white, black))
+        index, number = index + 2, number + 1
     return "  ".join(out)
 
 
