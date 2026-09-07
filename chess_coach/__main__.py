@@ -60,7 +60,7 @@ def main(argv: list[str] | None = None) -> int:
     # Muting has to happen before any mode starts, since the modes announce
     # the coach's state on the way in.
     if args.no_ai:
-        set_ai(False)
+        set_ai(False, announce=False)
 
     if args.ai_status:
         print(f"AI coach: {ai_status()}")
