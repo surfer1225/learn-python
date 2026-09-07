@@ -149,6 +149,158 @@ def _show_traps(move: BookMove) -> None:
         print(emphasize(body.replace(wrong, paint(wrong, RED), 1)))
 
 
+# --- ai coach --------------------------------------------------------------
+# One Tutor per process, built on first use. Building it costs nothing and
+# never fails — if there are no credentials it comes back knowing it is
+# unavailable and carrying the sentence that says why.
+_TUTOR: Optional[Tutor] = None
+_AI_ON = True
+
+
+def tutor() -> Tutor:
+    global _TUTOR
+    if _TUTOR is None:
+        _TUTOR = Tutor()
+    return _TUTOR
+
+
+def ai_ready() -> bool:
+    """Whether an AI call would actually go out right now."""
+    return _AI_ON and tutor().available
+
+
+def ai_status() -> str:
+    if not tutor().available:
+        return f"off — {tutor().reason}"
+    return tutor().describe() if _AI_ON else "muted ('coach on' to resume)"
+
+
+def set_ai(on: bool) -> None:
+    """Mute or unmute the AI coach without losing the connection.
+
+    Worth having as a real toggle rather than an environment variable: every
+    call costs money and a few seconds, and there are sessions where you want
+    to drill in silence.
+    """
+    global _AI_ON
+    _AI_ON = on
+    print(paint(f"   AI coach: {ai_status()}", DIM))
+
+
+def _snapshot(
+    session: "Session",
+    *,
+    studying: Optional[str] = None,
+    history: Optional[Sequence[str]] = None,
+) -> Snapshot:
+    """Describe a position for the tutor.
+
+    `history` lets a caller ask about the position one ply back — which is what
+    'why did the book play that' needs, since the move being asked about has
+    already been made.
+    """
+    played = list(session.played if history is None else history)
+    game = session.game if history is None else replay(played)
+    return Snapshot.of(
+        game,
+        played,
+        studying=studying,
+        matches=[line.name for line in book_mod.matching(played)][:4],
+    )
+
+
+@contextmanager
+def _waiting(label: str = "coach is thinking") -> Iterator[Callable[[], None]]:
+    """Show that the model is working, then wipe the line.
+
+    A chess question at high effort can run the better part of a minute, and a
+    terminal that prints nothing for that long reads as a hang. The dots are
+    driven by real streamed chunks, so they stop when the model does.
+    """
+    seen = [0]
+
+    def tick() -> None:
+        seen[0] += 1
+        if seen[0] % 6 == 1:
+            sys.stdout.write(".")
+            sys.stdout.flush()
+
+    sys.stdout.write(paint(f"   {label}", DIM))
+    sys.stdout.flush()
+    try:
+        yield tick
+    finally:
+        # \r\x1b[2K erases the progress line so the transcript reads clean;
+        # without colour there are no escapes to rely on, so just break.
+        sys.stdout.write("\r\x1b[2K" if color_enabled() else "\n")
+        sys.stdout.flush()
+
+
+def _consult(call: Callable[..., Answer], *args, **kwargs) -> Optional[Answer]:
+    """Make one tutor call. Never raises; returns None when there is no answer.
+
+    Every failure mode — no key, no network, a refusal, a garbled reply — lands
+    here as one line of explanation. A study session should degrade to the book
+    coach, not to a traceback.
+    """
+    if not ai_ready():
+        print(paint(f"   AI coach is {ai_status()}", DIM))
+        return None
+    try:
+        with _waiting() as tick:
+            return call(*args, on_progress=tick, **kwargs)
+    except LLMUnavailable as exc:
+        _respond("Coach unavailable:", str(exc), RED)
+        return None
+
+
+def _show_answer(answer: Answer, snapshot: Snapshot, *, label: str = "Coach:") -> None:
+    """Print a grounded answer, including what the engine threw out.
+
+    The dropped move and the truncated line are shown rather than quietly
+    swallowed. A learner who is told their coach is checked deserves to see the
+    check fire; a learner who is not told will eventually be taught something
+    that is not true.
+    """
+    if answer.text:
+        _respond(label, answer.text, CYAN)
+    if answer.move:
+        print(f"   {paint('Move:', BOLD)} {paint(answer.move, GREEN)}")
+    if answer.line:
+        rendered = movelist(
+            list(answer.line),
+            start=snapshot.move_number,
+            black_first=snapshot.to_move == "black",
+        )
+        print(f"   {paint('Line:', BOLD)} {rendered}")
+    if answer.dropped_move:
+        print(paint(f"   (dropped {answer.dropped_move} — not legal here)", DIM))
+    if answer.cut_line_at:
+        print(paint(f"   (line cut at {answer.cut_line_at} — not legal there)", DIM))
+
+
+def _ask_about(session: "Session", question: str, studying: Optional[str] = None) -> None:
+    """The `ask` command, shared by every mode that has a board on screen."""
+    if not question.strip():
+        print("   Ask what? e.g. ask why is my knight bad on the rim")
+        return
+    snapshot = _snapshot(session, studying=studying)
+    answer = _consult(tutor().ask, snapshot, question)
+    if answer:
+        _show_answer(answer, snapshot)
+
+
+def _review(session: "Session", note: str = "", studying: Optional[str] = None) -> None:
+    """The `review` command: a verdict on the game, not on one move."""
+    if not session.played:
+        print("   Nothing played yet.")
+        return
+    snapshot = _snapshot(session, studying=studying)
+    answer = _consult(tutor().review, snapshot, note=note)
+    if answer:
+        _show_answer(answer, snapshot, label="Review:")
+
+
 # --- learn -----------------------------------------------------------------
 def learn(line: Line, *, pause: bool = True) -> None:
     """Walk the whole line, explaining each move."""
