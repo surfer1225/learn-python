@@ -184,12 +184,18 @@ class Tutor:
     # prefix stays the dominant part of the request.
     THREAD_LIMIT = 12
 
-    def __init__(self, backend: Optional[Any] = None, *, config: Optional[Config] = None) -> None:
+    def __init__(
+        self,
+        backend: Optional[Any] = None,
+        *,
+        config: Optional[Config] = None,
+        env: Optional[Dict[str, str]] = None,
+    ) -> None:
         self.reason: Optional[str] = None
         if backend is not None:
             self.backend = backend
         else:
-            self.backend, self.reason = resolve(config)
+            self.backend, self.reason = resolve(config, env)
         self._thread: List[Dict[str, Any]] = []
 
     @property
