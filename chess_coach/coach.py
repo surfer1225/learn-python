@@ -672,8 +672,18 @@ def explore() -> None:
                 print(f"   {paint(bm.san, BOLD)} — {line.name}")
                 _say(bm.idea)
             continue
+        if low.startswith("ask"):
+            _ask_about(session, answer[3:])
+            continue
+        if low == "review":
+            _review(session)
+            continue
+        if low in ("coach on", "coach off"):
+            set_ai(low.endswith("on"))
+            continue
 
         history.append(list(session.played))
+        before = _snapshot(session) if ai_ready() else None
         if not session.push(answer):
             history.pop()
             print(f"   {paint('Not a legal move.', RED)}")
@@ -686,6 +696,18 @@ def explore() -> None:
                 f"   {paint('That leaves the book.', YELLOW)} "
                 f"The repertoire plays {', '.join(expected)} here."
             )
+            # Leaving the book is precisely where the book stops being able to
+            # help, so this is where the tutor is asked without being asked.
+            if before is not None:
+                critique = _consult(
+                    tutor().critique,
+                    before,
+                    session.played[-1],
+                    expected[0],
+                    next(bm.idea for _line, bm in options if bm.san == expected[0]),
+                )
+                if critique:
+                    _show_answer(critique, before)
 
 
 # --- menus -----------------------------------------------------------------
