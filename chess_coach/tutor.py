@@ -340,6 +340,7 @@ class Tutor:
         snapshot: Snapshot,
         on_progress: Optional[Callable[[], None]],
     ) -> Answer:
+        self._trim()  # before appending, so the request itself is bounded
         self._thread.append({"role": "user", "content": prompt})
         reply = self._call(self._thread, effort, on_progress)
         # Only the prose goes back into the thread. Re-sending the JSON would
@@ -348,8 +349,19 @@ class Tutor:
         self._thread.append(
             {"role": "assistant", "content": reply.get("answer", "") or "(no answer)"}
         )
-        del self._thread[: max(0, len(self._thread) - self.THREAD_LIMIT)]
         return ground(reply, snapshot)
+
+    def _trim(self) -> None:
+        """Keep the thread short, and keep it starting on a user turn.
+
+        Dropped in pairs, not one at a time: the API requires the first message
+        to be `user`, and a thread trimmed by an odd number would eventually be
+        sent starting with the assistant. Trimming the oldest exchange is the
+        right thing to lose — a chess conversation is about the position in
+        front of you, and the position has moved on.
+        """
+        while len(self._thread) >= self.THREAD_LIMIT:
+            del self._thread[:2]
 
     def _once(
         self,
