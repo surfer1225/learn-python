@@ -416,11 +416,28 @@ def drill(line: Line) -> None:
         if known is not None:
             _respond("No.", known, RED)
         elif from_san(session.game, answer) is not None:
+            # The one place the AI coach earns its keep in a drill. The book
+            # carries a refutation for every trap it knows about, but a
+            # learner's inferior move is usually not a trap — it is a sensible
+            # move that quietly concedes something, and there is no way to
+            # enumerate those in advance. The book can only say "not that one";
+            # the tutor can say what it cost.
             _respond(
                 "Legal, but not the book move.",
                 f"The move is {book_move.san} — {book_move.idea}",
                 YELLOW,
             )
+            if ai_ready():
+                snapshot = _snapshot(session, studying=line.name)
+                critique = _consult(
+                    tutor().critique,
+                    snapshot,
+                    to_san(session.game, from_san(session.game, answer)),
+                    book_move.san,
+                    book_move.idea,
+                )
+                if critique:
+                    _show_answer(critique, snapshot)
             session.push(book_move.san)
             ply += 1
             wrong_here = 0
