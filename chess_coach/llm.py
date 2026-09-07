@@ -228,16 +228,21 @@ class FakeBackend:
         return self.replies.pop(0)
 
 
-def resolve(config: Optional[Config] = None) -> "tuple[Optional[AnthropicBackend], Optional[str]]":
+def resolve(
+    config: Optional[Config] = None, env: Optional[Dict[str, str]] = None
+) -> "tuple[Optional[AnthropicBackend], Optional[str]]":
     """(backend, None) if a call could work, or (None, reason) if it could not.
 
     Returning the reason rather than raising is deliberate: "there is no AI
     coach today, and here is the one line that would fix it" is information the
     learner should get once at startup, not an exception at the moment they
     first ask a question.
+
+    `env` exists so a test can describe an environment instead of inheriting
+    whichever variables the developer happens to have exported.
     """
-    config = config or Config.from_env()
-    reason = config.missing()
+    config = config or Config.from_env(env)
+    reason = config.missing(env)
     if reason:
         return None, reason
     return AnthropicBackend(config), None
