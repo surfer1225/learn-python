@@ -28,14 +28,14 @@ own kind of dishonesty.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from chess.game import Game
 
 from . import book as book_mod
 from . import gambits as gambits_mod
-from .llm import Config, FakeBackend, LLMUnavailable, resolve
+from .llm import Config, LLMUnavailable, resolve
 from .position import Snapshot
 from .san import from_san, replay, to_san
 
