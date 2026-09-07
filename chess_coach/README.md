@@ -226,6 +226,21 @@ $ python -m chess_coach --selftest
 ## Tests
 
 ```
+python -m pytest tests/test_chess_coach.py tests/test_chess_coach_ai.py
+# or, with no test runner:
 PYTHONPATH=. python tests/test_chess_coach.py
-python -m pytest tests/test_chess_coach.py
+PYTHONPATH=. python tests/test_chess_coach_ai.py
 ```
+
+**No test touches the network.** `FakeBackend` presents the same surface as the
+real client, so the prompt that gets built and the checking that happens to the
+reply run exactly as they do against the live model. What the model *says* is
+not ours to assert; what we do with what it says is, and that is what is tested
+— the illegal move that gets dropped, the variation that gets cut at ply three,
+the sloppy `ed5` that comes back as `exd5`, the conversation thread that has to
+keep starting on a user turn.
+
+It has already earned its keep twice: the thread trim was dropping messages one
+at a time, which would eventually have sent the API a conversation opening with
+the assistant, and the fake was recording the message list by reference, which
+made every recorded call show the final state of the conversation.
