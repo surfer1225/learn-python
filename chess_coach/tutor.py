@@ -285,9 +285,8 @@ class Tutor:
         """A verdict on the whole game so far, not on one move."""
         prompt = (
             f"{snapshot.brief()}\n\n"
-            f"{note}\n\n" if note else f"{snapshot.brief()}\n\n"
-        ) + (
-            "Review the game to this point. Name the single most useful thing "
+            + (f"{note}\n\n" if note else "")
+            + "Review the game to this point. Name the single most useful thing "
             "the learner should take away — the recurring habit, not a list of "
             "individual moves. If the play was sound, say so and name what "
             "they got right. Leave `move` empty unless there is one move worth "
