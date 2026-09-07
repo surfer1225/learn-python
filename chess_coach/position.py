@@ -15,12 +15,12 @@ chess text in the world already uses.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 from chess.board import Board
 from chess.constants import BOARD_SIZE, Color
 from chess.game import Game, GameStatus
-from chess.pieces import King, Piece, Rook
+from chess.pieces import King, Rook
 
 from .render import movelist
 from .san import square_name, to_san
