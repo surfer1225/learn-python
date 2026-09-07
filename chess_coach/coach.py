@@ -343,8 +343,11 @@ def drill(line: Line) -> None:
     _say(
         "I will play the other side. Give me your move in algebraic notation "
         "(e4, Nf3, O-O, exd5). Type 'hint' for a nudge, 'idea' for the reason "
-        "behind the last move, or 'quit' to stop."
+        "behind the last move, 'why' to have that reason opened out, "
+        "'ask <question>' for anything else, or 'quit' to stop."
     )
+    if ai_ready():
+        print(paint(f"   AI coach: {ai_status()}", DIM))
 
     session = Session()
     flipped = line.hero is Color.BLACK
