@@ -222,7 +222,15 @@ class FakeBackend:
         self.config = Config(provider="fake", model="fake-model")
 
     def ask_json(self, **kwargs: Any) -> Dict[str, Any]:
-        self.calls.append(kwargs)
+        # Record a copy of `messages`, not the caller's list. The tutor keeps a
+        # running thread and appends to it after the call returns, so holding a
+        # reference would make every recorded call show the *final* state of
+        # the conversation — which is exactly the thing a thread test is trying
+        # to distinguish. The real backend serialises to JSON on the way out
+        # and is immune; the fake has to opt in.
+        recorded = dict(kwargs)
+        recorded["messages"] = [dict(m) for m in kwargs.get("messages", [])]
+        self.calls.append(recorded)
         if not self.replies:
             raise LLMUnavailable("FakeBackend ran out of scripted replies")
         return self.replies.pop(0)
