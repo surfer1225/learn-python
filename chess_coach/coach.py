@@ -917,6 +917,20 @@ def repl() -> None:
             show_principles()
         elif command == "explore":
             explore()
+        elif command == "spar":
+            # `spar black` picks a side, `spar strong` picks a strength, and
+            # `spar black strong` does both — one argument list, no flags,
+            # because the two vocabularies do not overlap.
+            hero = Color.BLACK if "black" in args else Color.WHITE
+            level = next((a for a in args if a.lower() in _LEVELS), "club")
+            spar(hero, level=level)
+        elif command == "ask":
+            _ask_about(Session(), " ".join(args))
+        elif command == "coach":
+            if args and args[0].lower() in ("on", "off"):
+                set_ai(args[0].lower() == "on")
+            else:
+                print(f"   AI coach: {ai_status()}")
         elif command == "random":
             drill(random.choice(book_mod.LINES))
         elif command == "gambits":
