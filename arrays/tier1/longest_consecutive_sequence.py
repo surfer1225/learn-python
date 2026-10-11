@@ -15,8 +15,21 @@ Run: python arrays/tier1/longest_consecutive_sequence.py
 
 
 def longest_consecutive(nums: list[int]) -> int:
-    # TODO: implement
-    raise NotImplementedError
+    """O(n) time, O(n) space.
+
+    Only walk forward from run starts (x - 1 not in the set), so each number
+    is visited at most twice across the whole loop.
+    """
+    num_set = set(nums)
+    best = 0
+    for x in num_set:
+        if x - 1 in num_set:
+            continue  # not a run start; its run is counted from the start
+        length = 1
+        while x + length in num_set:
+            length += 1
+        best = max(best, length)
+    return best
 
 
 if __name__ == "__main__":
