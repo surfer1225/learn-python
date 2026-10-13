@@ -22,7 +22,7 @@ def maximum_swap(num: int) -> int:
 if __name__ == "__main__":
     assert maximum_swap(2736) == 7236
     assert maximum_swap(9973) == 9973  # already maximal: no swap
-    assert maximum_swap(1993) == 9913  # tie: take the LAST 9
+    assert maximum_swap(1993) == 9913  # duplicate max digit: which 9 do you take?
     assert maximum_swap(98368) == 98863  # first digits already in place
     assert maximum_swap(115) == 511
     assert maximum_swap(10) == 10
