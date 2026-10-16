@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.10 (learn-python)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10 (learn-python)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_25" project-jdk-name="Python 3.13 virtualenv at ~/Library/CloudStorage/GoogleDrive-yaowenchi@meta.com/My Drive/Personal/projects/learn-python/.venv" project-jdk-type="Python SDK" />
 </project>

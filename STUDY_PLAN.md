@@ -60,7 +60,7 @@ Write Python like an experienced backend engineer.
 
 ## Phase 2 — Algorithms & data structures (Weeks 3–5)
 
-**The full question bank lives in [QUESTIONS.md](QUESTIONS.md)** — 144 problems
+**The full question bank lives in [QUESTIONS.md](QUESTIONS.md)** — 145 problems
 across 15 patterns, each a runnable stub with the statement, a worked example,
 and self-checks.
 
@@ -69,7 +69,7 @@ Every pattern folder is split by priority:
 | Tier | Meaning | Count |
 | --- | --- | --- |
 | **Tier 1** | Must prepare — the core set | 60 |
-| **Tier 2** | Good to prepare — common follow-ups | 56 |
+| **Tier 2** | Good to prepare — common follow-ups | 57 |
 | **Tier 3** | Prepare if you have time — hard or niche | 28 |
 
 ```
@@ -165,6 +165,6 @@ Backend building blocks behind AI apps.
 Wk0 tooling · Wk1–2 Python · Wk3–5 Algorithms (+start light mocks Wk4) · Wk6–8 Production coding · Wk9–10 System design · Wk11 AI infra · Wk12 Mocks.
 
 ## Progress
-Algorithms: **2 / 144** (Tier 1: **2 / 60**)  ·  Production components: **2 / 8**
+Algorithms: **2 / 145** (Tier 1: **2 / 60**)  ·  Production components: **2 / 8**
 System designs: **0 / 7**  ·  Mocks done: **0**
 _(update as you go)_

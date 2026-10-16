@@ -15,8 +15,24 @@ Run: python greedy/tier2/maximum_swap.py
 
 
 def maximum_swap(num: int) -> int:
-    # TODO: implement
-    raise NotImplementedError
+    max_digit = -1
+    max_index = -1
+    digits = list(str(num))
+    max_index_from_right = [0] * len(digits)
+
+    for i in range(len(digits) -1, -1, -1):
+        cur = digits[i]
+        if max_digit < cur:
+            max_digit = cur
+            max_index = i
+        max_index_from_right[i] = max_index
+    for i in range(len(digits)):
+        cur = int(digits[i])
+        if cur < int(digits[max_index_from_right[i]]):
+            digits[i], digits[max_index_from_right[i]] = digits[max_index_from_right[i]], digits[i]
+            return int("".join(digits))
+
+    return num
 
 
 if __name__ == "__main__":

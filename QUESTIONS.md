@@ -1,11 +1,11 @@
 # Question Bank
 
-144 problems across 15 patterns, split into three tiers.
+145 problems across 15 patterns, split into three tiers.
 
 | Tier | Meaning | Count |
 | --- | --- | --- |
 | **Tier 1** | Must prepare — the core set. Do these first, then re-derive them cold. | 60 |
-| **Tier 2** | Good to prepare — common follow-ups and the next-most-asked variants. | 56 |
+| **Tier 2** | Good to prepare — common follow-ups and the next-most-asked variants. | 57 |
 | **Tier 3** | Prepare if you have time — hard or niche; skip until Tiers 1-2 are solid. | 28 |
 
 Every file is a stub with the problem statement, a worked example, and runnable
@@ -40,7 +40,7 @@ coverage, and the patterns reinforce each other. Only then go back for Tier 2.
 | Graphs | `graphs/` | 14 |
 | Dynamic Programming | `dynamic_programming/` | 16 |
 | Intervals | `intervals/` | 6 |
-| Greedy | `greedy/` | 6 |
+| Greedy | `greedy/` | 7 |
 | Math & Bit Manipulation | `math_bits/` | 10 |
 
 ---
@@ -328,6 +328,7 @@ coverage, and the patterns reinforce each other. Only then go back for Tier 2.
 - [ ] [Gas Station](https://leetcode.com/problems/gas-station/) — `greedy/tier2/gas_station.py`
 - [ ] [Hand of Straights](https://leetcode.com/problems/hand-of-straights/) — `greedy/tier2/hand_of_straights.py`
 - [ ] [Jump Game II](https://leetcode.com/problems/jump-game-ii/) — `greedy/tier2/jump_game_ii.py`
+- [ ] [Maximum Swap](https://leetcode.com/problems/maximum-swap/) — `greedy/tier2/maximum_swap.py`
 
 **Tier 3 — prepare if you have time**
 
