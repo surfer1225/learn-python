@@ -5,6 +5,7 @@
 | **Tier** | 1 — must prepare |
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×6 |
 | **Most recent report** | 2026-05-12 |
+| **ShowOffer video** (watch after your attempt) | [Design a Crossword Puzzle Solver](https://www.youtube.com/watch?v=bEGs-PUTAWg) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

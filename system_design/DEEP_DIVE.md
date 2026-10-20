@@ -4,6 +4,8 @@ A reverse system design round. You present a project you led; the
 interviewer stress-tests it. Along with the design rounds, it weighs most in
 whether you land at L5 or L4.
 
+Video: [ShowOffer — Crack the Project Retro / Technical Deep Dive Interview at OpenAI & Anthropic](https://www.youtube.com/watch?v=Y_D114Tr5nI)
+
 ## Format (as reported)
 
 - 45–60 minutes with an engineer or senior manager, sometimes a silent shadow,

@@ -5,6 +5,7 @@
 | **Tier** | 2 — good to prepare |
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×2 |
 | **Most recent report** | 2026-10-10 |
+| **ShowOffer video** (watch after your attempt) | No exact match · related: [Design a Real-Time Leaderboard](https://www.youtube.com/watch?v=Tf5cYTPiLCU) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

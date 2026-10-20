@@ -5,6 +5,7 @@
 | **Tier** | 1 — must prepare |
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×6 · [Aced](https://www.aced.io/blog/openai-system-design-interview) (phone screen and onsite) · [Hello Interview](https://www.hellointerview.com/guides/openai/l4) (two-week MVP) · [Coditioning](https://www.coditioning.com/blog/16/openai-system-design-interview-questions) |
 | **Most recent report** | 2026-04-26 |
+| **ShowOffer video** (watch after your attempt) | [Design a Slack-like ChatApp](https://www.youtube.com/watch?v=Zw36jSyMlZI) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

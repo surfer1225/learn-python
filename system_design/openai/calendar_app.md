@@ -5,6 +5,7 @@
 | **Tier** | 3 — if you have time |
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×1 |
 | **Most recent report** | 2025-11-09 |
+| **ShowOffer video** (watch after your attempt) | [Design Google Calendar](https://www.youtube.com/watch?v=b_gpaGfS9H8) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

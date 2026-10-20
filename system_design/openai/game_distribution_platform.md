@@ -5,6 +5,7 @@
 | **Tier** | 2 — good to prepare |
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×2 |
 | **Most recent report** | 2026-09-18 |
+| **ShowOffer video** (watch after your attempt) | None on the channel |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

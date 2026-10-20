@@ -5,6 +5,7 @@
 | **Tier** | 1 — must prepare |
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×14 (incl. hosted notebooks) |
 | **Most recent report** | 2026-10-12 |
+| **ShowOffer video** (watch after your attempt) | [Design Cloud IDE with Remote Devboxes](https://www.youtube.com/watch?v=uuH2CIZUXxM) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

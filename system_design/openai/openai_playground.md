@@ -5,6 +5,7 @@
 | **Tier** | 1 — must prepare |
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×3 · [Aced](https://www.aced.io/blog/openai-system-design-interview) (phone screen) |
 | **Most recent report** | 2026-04-25 |
+| **ShowOffer video** (watch after your attempt) | No exact match · related: [Design ChatGPT](https://www.youtube.com/watch?v=5yHR1_2Y6bs) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

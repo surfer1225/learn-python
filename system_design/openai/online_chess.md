@@ -3,8 +3,9 @@
 | | |
 | --- | --- |
 | **Tier** | 1 — must prepare |
-| **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×9 · [Hello Interview](https://www.hellointerview.com/guides/openai/l5) #1 most asked (Staff) · [Coditioning](https://www.coditioning.com/blog/16/openai-system-design-interview-questions) |
+| **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×9 · [Hello Interview](https://www.hellointerview.com/guides/openai/l5) staff #1 most asked · [Coditioning](https://www.coditioning.com/blog/16/openai-system-design-interview-questions) |
 | **Most recent report** | 2026-09-21 |
+| **ShowOffer video** (watch after your attempt) | [Design Online Chess](https://www.youtube.com/watch?v=A7ISCoZab2I) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

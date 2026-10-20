@@ -5,6 +5,7 @@
 | **Tier** | 1 — must prepare |
 | **Reported by** | [IGotAnOffer](https://igotanoffer.com/en/advice/openai-system-design-interview) (common question) · [DesignGurus](https://www.designgurus.io/answers/detail/what-to-expect-in-the-openai-system-design-interview) (frequent in senior final loops) |
 | **Most recent report** | — |
+| **ShowOffer video** (watch after your attempt) | No exact match · related: [Master Search — Part 1](https://www.youtube.com/watch?v=3MIGT__j6_A), [Part 2](https://www.youtube.com/watch?v=Mq22eUCPOls) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

@@ -5,6 +5,7 @@
 | **Tier** | 1 — must prepare |
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×8 · [Hello Interview](https://www.hellointerview.com/guides/openai/l5) top-5 (Staff) · [Educative](https://www.educative.io/courses/openai-system-design-interview-questions) · [rejected onsite, Jul 2026](https://prachub.com/interview-experiences/openai-software-engineer-interview-experience-chatgpt-system-design-vector-store-and-a-scheduler-debugging-round-rejected) |
 | **Most recent report** | 2026-09-20 |
+| **ShowOffer video** (watch after your attempt) | [Design ChatGPT](https://www.youtube.com/watch?v=5yHR1_2Y6bs) · background: [How LLM Inference Actually Works](https://www.youtube.com/watch?v=-7zk3XcZMGo) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

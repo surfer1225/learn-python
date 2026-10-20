@@ -5,6 +5,7 @@
 | **Tier** | 2 — good to prepare |
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×2 |
 | **Most recent report** | 2026-01-19 |
+| **ShowOffer video** (watch after your attempt) | [Design a URL Shortener Service](https://www.youtube.com/watch?v=-ldyMeu6iL4) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

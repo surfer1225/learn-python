@@ -5,6 +5,7 @@
 | **Tier** | 1 — must prepare |
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×5 · [Hello Interview](https://www.hellointerview.com/guides/openai/l5) top-5 (Staff) · [Coditioning](https://www.coditioning.com/blog/16/openai-system-design-interview-questions) · [Interview Query](https://www.interviewquery.com/interview-guides/openai-software-engineer) |
 | **Most recent report** | 2026-05-26 |
+| **ShowOffer video** (watch after your attempt) | [Design a CI/CD System](https://www.youtube.com/watch?v=y32PywFi7Ek) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

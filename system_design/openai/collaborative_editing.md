@@ -5,6 +5,7 @@
 | **Tier** | 3 — if you have time |
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×1 · [IGotAnOffer](https://igotanoffer.com/en/advice/openai-system-design-interview) (senior-level example) |
 | **Most recent report** | 2026-03-11 |
+| **ShowOffer video** (watch after your attempt) | None on the channel |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

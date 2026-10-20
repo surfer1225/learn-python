@@ -3,8 +3,9 @@
 | | |
 | --- | --- |
 | **Tier** | 2 — good to prepare |
-| **Reported by** | [Aced](https://www.aced.io/blog/openai-system-design-interview) (phone screen) · related: GPU job schedulers in [text-to-video](text_to_video_generation.md) |
+| **Reported by** | [Aced](https://www.aced.io/blog/openai-system-design-interview) (phone screen) · [Aced candidate report, 2026](https://www.aced.io/experiences/openai-software-engineer-interview-20a84c) (phone screen; wanted Kubernetes-level depth) · related: [text-to-video](text_to_video_generation.md) GPU scheduler |
 | **Most recent report** | — |
+| **ShowOffer video** (watch after your attempt) | [Design a Job Scheduler](https://www.youtube.com/watch?v=TDFR_TBYxtE) · [Deep dive: multi-step jobs](https://www.youtube.com/watch?v=LkTnVrXGL3k) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

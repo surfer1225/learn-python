@@ -3,8 +3,9 @@
 | | |
 | --- | --- |
 | **Tier** | 2 — good to prepare |
-| **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×3 |
+| **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×3 · [IGotAnOffer](https://igotanoffer.com/en/advice/openai-system-design-interview) (GPU credit calculator in phone screens) |
 | **Most recent report** | 2026-05-03 |
+| **ShowOffer video** (watch after your attempt) | None on the channel |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

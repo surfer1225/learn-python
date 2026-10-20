@@ -5,6 +5,7 @@
 | **Tier** | 1 — must prepare |
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×8 (incl. IoT logging) |
 | **Most recent report** | 2026-09-28 |
+| **ShowOffer video** (watch after your attempt) | [Design a Smart Grid Control System — Part I](https://www.youtube.com/watch?v=Alx5DSyXE80) · [Part II](https://www.youtube.com/watch?v=CpqpaEQCSpU) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

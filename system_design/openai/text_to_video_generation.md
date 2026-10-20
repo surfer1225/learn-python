@@ -5,6 +5,7 @@
 | **Tier** | 1 — must prepare |
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×10 |
 | **Most recent report** | 2026-09-28 |
+| **ShowOffer video** (watch after your attempt) | No exact match · related: [Design Batch Inference System](https://www.youtube.com/watch?v=CYFs6mR--KE), [Design a Job Scheduler](https://www.youtube.com/watch?v=TDFR_TBYxtE) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

@@ -5,6 +5,7 @@
 | **Tier** | 2 — good to prepare |
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×4 (incl. duplicate file detection) |
 | **Most recent report** | 2026-09-20 |
+| **ShowOffer video** (watch after your attempt) | No exact match · related: [Design an S3-like File System](https://www.youtube.com/watch?v=BS_noBr-UlI) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

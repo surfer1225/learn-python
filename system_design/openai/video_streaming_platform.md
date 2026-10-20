@@ -5,6 +5,7 @@
 | **Tier** | 2 — good to prepare |
 | **Reported by** | [Aced](https://www.aced.io/blog/openai-system-design-interview) (onsite) · [Coditioning](https://www.coditioning.com/blog/16/openai-system-design-interview-questions) |
 | **Most recent report** | — |
+| **ShowOffer video** (watch after your attempt) | None on the channel |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

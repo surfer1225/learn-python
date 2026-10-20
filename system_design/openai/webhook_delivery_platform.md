@@ -5,6 +5,7 @@
 | **Tier** | 1 — must prepare |
 | **Reported by** | [Hello Interview](https://www.hellointerview.com/guides/openai/l4) · [Coditioning](https://www.coditioning.com/blog/16/openai-system-design-interview-questions) · [IGotAnOffer](https://igotanoffer.com/en/advice/openai-system-design-interview) · [PracHub](https://prachub.com/companies/openai/categories/system-design) ×1 (combined prompt) |
 | **Most recent report** | 2025-07-04 |
+| **ShowOffer video** (watch after your attempt) | [Design Webhook](https://www.youtube.com/watch?v=mZXJKcChCYo) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt
