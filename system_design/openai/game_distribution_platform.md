@@ -27,7 +27,10 @@
 **Black-box / out of scope:**
 -
 
-## 2. Requirements & estimates (5–12 min)
+**The one or two hard problems this design lives or dies on:**
+-
+
+## 2. Requirements & estimates (5–10 min)
 
 **Must:**
 -
@@ -38,13 +41,13 @@
 **Won't:**
 -
 
-**Non-functional (with numbers):**
+**SLOs and non-functional numbers:**
 -
 
 **Back-of-envelope (and what each number decides):**
 -
 
-## 3. Client & API (12–20 min)
+## 3. Client & API (10–17 min)
 
 **Wireframe and UI states:**
 
@@ -60,13 +63,13 @@
 
 **Transport and why:**
 
-## 4. Data model (20–25 min)
+## 4. Data model (17–22 min)
 
 | Entity | Key / partition key | Key fields | Store and why |
 | --- | --- | --- | --- |
 | | | | |
 
-## 5. High-level design v1 (25–35 min)
+## 5. High-level design v1 (22–32 min)
 
 ```text
 
@@ -75,7 +78,10 @@
 **One request, end to end:**
 1.
 
-## 6. Scale & failure (35–50 min)
+**Alternatives I rejected and why:**
+-
+
+## 6. Scale & failure (32–45 min)
 
 | Load | What breaks first | Redesign |
 | --- | --- | --- |
@@ -87,19 +93,22 @@
 | --- | --- | --- | --- |
 | | | | |
 
-## 7. Deep dive (50–58 min)
+## 7. Deep dive (45–55 min)
 
 **Menu I'd offer:**
 -
 
 **Chosen and notes:**
 
-## 8. Wrap-up (58–60 min)
+## 8. Evolution & operations (55–60 min)
 
-**Trade-offs and what I'd do next:**
+**v1 → v2 → v3, and how each migration happens without downtime:**
 -
 
-**Metrics and alerts:**
+**Operating it — SLOs/alerts, rollout and rollback, top cost drivers, abuse and safety:**
+-
+
+**Ownership — which team owns which component, and the contracts between them:**
 -
 
 ---
@@ -126,10 +135,15 @@
 **Traps:**
 - Whole-file downloads for updates.
 
+**L5 (staff) push — where a senior answer stops and a staff answer keeps going:**
+- Release-day demand is 3× forecast. Pre-provisioning, CDN contracts, fallback.
+- Chargebacks and stolen keys — where does fraud detection sit?
+- Regional tax, pricing and age ratings without forking the catalogue.
+
 </details>
 
 ## Attempt log
 
-| Date | Minutes | Rubric (scope / stack / scale / failure / depth / simple / comms) | Gaps to fix |
+| Date | Minutes | Rubric (scope / stack / scale / failure / depth / simple / evolve / comms) | Gaps to fix |
 | --- | --- | --- | --- |
 | | | | |

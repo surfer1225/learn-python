@@ -1,117 +1,123 @@
-# OpenAI System Design — Answer Template
+# OpenAI System Design — Answer Template (pitched at L5 / staff)
 
-Every question in [`openai/`](openai/) uses this template. Copy the section
-headings, fill them in under a timer, then open the question's
-**Interviewer notes** to grade yourself.
+Every question in [`openai/`](openai/) uses this template. Fill the sections in
+under a 60-minute timer, then open the question's **Interviewer notes** and
+grade yourself with the rubric below.
+
+**Target level.** Offer reports put OpenAI **L5 ≈ Meta E6 / IC6 (staff)**.
+OpenAI interviews senior and staff candidates with the same rounds and sets
+the level *after* the loop, and the design rounds and the project deep dive
+weigh most in that decision. Candidates report that many people get downlevelled
+coming in. So the same prompt is graded L4 or L5 by **how far past a correct
+design you go** — that is what the staff layer in this template is for.
 
 ## Why this shape
 
-The template is built around what candidates consistently report about the
-OpenAI round, not a generic "requirements → boxes → scale" recipe:
-
 | What OpenAI interviewers do | What the template forces you to do |
 | --- | --- |
-| 60-minute collaborative working session; they add constraints mid-way | Time-boxed phases with explicit check-ins |
-| Expect **full stack** — wireframe, API contract, schema — not just a backend diagram | A dedicated *Client & API* phase before any boxes |
-| Rarely say what to focus on; one candidate was told to treat model serving as a black box | A *Black-box list* in the first 5 minutes |
-| Push scale hard: "what breaks at 100×? at 1000×?" | A *10× / 100× / 1000×* table naming the first thing to break |
-| Ask how the tech you named works inside (Kafka rebalancing, WebSocket limits, K8s scheduling) | *Justify every component* — name it only if you can explain its internals |
-| Probe failure: node crash, duplicate delivery, region loss, bad deploy | A *Failure modes* table you fill in before being asked |
-| Reward clean MVP-first designs; some prompts are "small team, two-week MVP" | *v1 first*, then evolve — never open with hyperscale |
+| 60-minute working session; they add constraints mid-way | Time-boxed phases with explicit check-ins |
+| Expect **full stack** — wireframe, API contract, schema — not just a backend diagram | A *Client & API* phase before any boxes |
+| Rarely say what to focus on; one candidate was told to treat model serving as a black box | A *black-box list* and the *hard problems* named in the first 5 minutes |
+| Want you to **drive** — "learning to drive system design interviews is key" | You open each phase and propose the next; the interviewer reacts |
+| Push scale hard: "what breaks at 100×? at 1000×?" | A 10× / 100× / 1000× table naming the first thing to break |
+| Probe internals of whatever you name — down to file-descriptor limits when you colocate TCP connections | Name a technology only if you can explain how it works inside |
+| Probe failure: crash, duplicate delivery, region loss, bad deploy | A failure table you fill in before being asked |
+| At staff, expect long-term thinking: maintenance, evolution, operations | Section 8: *Evolution & operations* |
 
 ## Time budget (60 min)
 
 | # | Phase | Minutes | Output on the board |
 | --- | --- | --- | --- |
-| 1 | Clarify & scope | 0–5 | One-sentence restatement · black-box list · interviewer sign-off |
-| 2 | Requirements & estimates | 5–12 | Must / Should / Won't · non-functional numbers · back-of-envelope |
-| 3 | Client & API | 12–20 | Wireframe + UI states · endpoints with request/response |
-| 4 | Data model | 20–25 | Entities · keys · partition key · indexes · consistency per entity |
-| 5 | High-level design v1 | 25–35 | Diagram · one request walked end to end |
-| 6 | Scale & failure | 35–50 | 10× / 100× / 1000× table · failure-mode table |
-| 7 | Deep dive | 50–58 | Two or three levels deep on one component |
-| 8 | Wrap-up | 58–60 | Trade-offs made · what you'd do next |
+| 1 | Clarify & scope | 0–5 | Restatement · black-box list · **the 1–2 hard problems** · sign-off |
+| 2 | Requirements & estimates | 5–10 | Must / Should / Won't · SLOs · back-of-envelope |
+| 3 | Client & API | 10–17 | Wireframe + UI states · endpoints |
+| 4 | Data model | 17–22 | Entities · keys · partition key · store and why |
+| 5 | High-level design v1 | 22–32 | Diagram · one request end to end · rejected alternatives |
+| 6 | Scale & failure | 32–45 | 10× / 100× / 1000× · failure table |
+| 7 | Deep dive | 45–55 | Two or three levels down on one or two components |
+| 8 | Evolution & operations | 55–60 | Roadmap and migrations · SLOs, rollout, cost, abuse · ownership |
 
-For a 45-minute round, cut phase 3 to 5 minutes and phase 7 to 5 minutes.
+A working v1 by minute 32 is what buys you the last 28 minutes, which is
+where the staff signal lives. For a 45-minute round, shrink phases 3 and 7.
 
 ## The sections
 
 ### 1. Clarify & scope
 - Restate: **"So we are designing ___ that ___, optimizing for ___."**
-- Ask questions that show judgment ("I'd assume X because Y — OK?"), not "what
-  should I build?".
-- Write the **black-box list**: what you will *not* design (usually model
-  inference, auth, billing). Get a nod before moving on.
+- Ask questions that show judgment ("I'd assume X because Y — OK?").
+- Write the **black-box list** (usually model inference, auth, billing).
+- **Name the hard problems out loud now** ("this lives or dies on
+  exactly-once charging against an unreliable provider"). Seniors find the
+  crux during the deep dive; staff candidates say it in minute three and
+  steer the hour towards it.
 
 ### 2. Requirements & estimates
-- **Functional:** Must (MVP) / Should / Won't. Keep Must to 3–5 items.
-- **Non-functional with numbers:** users, QPS (avg and peak), latency targets
-  (p50/p99), durability, availability, delivery guarantee
-  (at-most / at-least / effectively-once), consistency per operation.
-- **Back-of-envelope:** only the numbers that change a decision (storage per
-  year, peak write QPS, fan-out, egress). Say what each number decides.
+- **Functional:** Must (3–5 items) / Should / Won't.
+- **SLOs with numbers:** availability, p50/p99 latency, durability, delivery
+  guarantee, consistency per operation, freshness.
+- **Back-of-envelope:** only numbers that change a decision — and say which
+  decision each one changes.
 
 ### 3. Client & API
-- ASCII **wireframe** of the main screen, plus the states users see: loading,
-  streaming, empty, error, offline, retrying.
-- **Endpoints:** method, path, request, response, status codes. Mark which are
-  idempotent and how (idempotency key, PUT semantics).
-- **Transport:** REST / SSE / WebSocket / gRPC — and why for *this* product.
+- ASCII **wireframe** plus the states users see: loading, streaming, empty,
+  error, offline, retrying.
+- **Endpoints** with request/response and status codes; mark idempotency.
+- **Transport** (REST / SSE / WebSocket / gRPC) and why for *this* product.
 
 ### 4. Data model
-- Core entities with primary keys and the fields that matter.
-- **Partition key** and the access pattern it serves. Secondary indexes.
-- Which store and **why** (consistency, access pattern, scale), and what
-  consistency each entity needs.
+- Entities, keys, the **partition key** and the access pattern it serves.
+- Store choice and **why**; consistency each entity needs.
 
 ### 5. High-level design v1
-- The simplest design that meets the Must list at stated scale.
-- Draw it, then **walk one request end to end**, naming every hop.
+- Simplest design that meets the Must list at stated scale.
+- Walk **one request end to end**.
+- **Rejected alternatives:** at least one real fork in the road ("pull vs
+  push", "SQL vs wide-column") with the reason. Staff answers show the
+  option space, not just the pick.
 
 ### 6. Scale & failure
-| Load | What breaks first | Redesign |
-| --- | --- | --- |
-| 10× | | |
-| 100× | | |
-| 1000× | | |
-
-| Failure | Detection | Behaviour / recovery | User sees |
-| --- | --- | --- | --- |
-| Node / worker crash | | | |
-| Duplicate or out-of-order message | | | |
-| Dependency slow or down | | | |
-| Region outage | | | |
-| Bad deploy | | | |
+- For each load step, the **first** thing to break, with the number that
+  breaks it, and the redesign of only that part.
+- Failure table: detection, recovery behaviour, what the user sees.
 
 ### 7. Deep dive
-- Offer a **menu** of 2–3 components; let the interviewer pick.
-- Go two or three levels down: data structures, concurrency, the exact
-  failure sequence, the numbers.
+- Offer a menu; go two or three levels down: data structures, concurrency,
+  exact failure sequences, numbers. Expect to be asked to sketch code.
 
-### 8. Wrap-up
-- Trade-offs you made and what would make you revisit them.
-- Observability: the 3–5 metrics and alerts that tell you it's healthy.
-- What you'd build next with more time.
+### 8. Evolution & operations (the staff layer)
+- **Roadmap:** v1 → v2 → v3 tied to growth or new requirements, and **how
+  each migration runs without downtime** (dual writes, backfill, shadow
+  reads, cutover, rollback).
+- **Operating it:** SLOs and the alerts behind them; rollout and rollback;
+  top two cost drivers and the lever for each; abuse, safety and privacy
+  (deletion, residency).
+- **Ownership:** which team owns which component and the contracts between
+  them; what you'd make a platform for other teams.
 
 ## Self-grading rubric
 
-Score each 1–4 after every attempt (4 = what a strong senior/staff hire does).
+Score each axis 1–4. L4 is a solid hire at senior; L5 is what gets you the
+staff level.
 
-| Axis | 2 — weak | 4 — strong |
+| Axis | L4 (senior) | L5 (staff) |
 | --- | --- | --- |
-| **Scoping** | Starts drawing immediately | Restates, sets black-box list, gets sign-off, checks in throughout |
-| **Full stack** | Backend boxes only | Wireframe, precise API contract, schema that matches both |
-| **Scale thinking** | "Add more servers" | Names the first bottleneck at each threshold and redesigns that part |
-| **Correctness under failure** | Happy path only | Retries, idempotency, ordering, partial failure, user-visible behaviour |
-| **Technical depth** | Names technologies | Explains internals and alternatives for every named component |
-| **Simplicity** | Over-engineered from minute one | Clean v1, evolved only when a requirement forces it |
-| **Communication** | Interviewer drives | You drive; trade-offs stated out loud as you go |
+| **Scope** | Clarifies requirements, agrees scope | Names the hard problems up front and steers the hour to them; drives every phase |
+| **Full stack** | Wireframe, API, schema present | Client states, API and schema consistent with each other and with the SLOs |
+| **Scale** | Finds bottlenecks when pushed | Predicts the first bottleneck at each step with numbers before being asked |
+| **Failure** | Handles crashes and retries | Reasons about partial failure, ordering, idempotency and what the user sees, unprompted |
+| **Depth** | Explains internals of chosen components | Compares alternatives at the internals level and defends the choice for *these* constraints |
+| **Simplicity** | Clean design | Clean v1 with a clear path to v3; knows what not to build |
+| **Evolve & operate** | Mentions monitoring | Migration plan, rollout, SLOs, cost levers, ownership boundaries |
+| **Communication** | Clear when asked | Thinks out loud, offers trade-offs, adapts smoothly when constraints change |
 
 ## Traps that recur across OpenAI reports
 
 - Spending time on transformers, GPUs or training when nobody asked — treat
-  inference as a black-box API unless told otherwise.
+  inference as a black-box API unless told otherwise. (Infra-team loops are
+  the exception: there, GPU scheduling, batching and cost are in scope.)
 - Skipping the front end on a product prompt.
 - Naming a technology you can't defend at the internals level.
 - Promising "exactly-once" without explaining idempotency and dedup.
 - Hyperscale on minute one instead of an MVP that evolves.
+- At staff: a correct design that stops at the diagram, with no evolution,
+  operations or ownership story.
