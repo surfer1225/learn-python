@@ -123,6 +123,7 @@ Design scalable distributed systems; always state trade-offs.
 - [ ] Storage: SQL vs NoSQL, indexing, partitioning; queues & streaming (Kafka)
 - [ ] Reliability: idempotency, retries, circuit breakers, rate limiting, observability
 - [ ] **Design drills** (write notes in `system_design/`): URL shortener, rate limiter service, news feed, chat, distributed cache, web crawler, notification system
+- [ ] **OpenAI question bank:** [`system_design/README.md`](system_design/README.md) — 26 reported questions in three tiers, one [template](system_design/TEMPLATE.md); do Tier 1 timed at 60 min
 - **Milestone:** 5–7 written designs; can whiteboard any in 45 min with trade-offs.
 
 ---
