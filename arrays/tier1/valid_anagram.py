@@ -11,11 +11,12 @@ Example:
 
 Run: python arrays/tier1/valid_anagram.py
 """
-
+from collections import Counter
 
 def is_anagram(s: str, t: str) -> bool:
-    # TODO: implement
-    raise NotImplementedError
+    s_char_dict = dict(Counter(s))
+    t_char_dict = dict(Counter(t))
+    return s_char_dict == t_char_dict
 
 
 if __name__ == "__main__":

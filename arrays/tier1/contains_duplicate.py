@@ -15,8 +15,13 @@ Run: python arrays/tier1/contains_duplicate.py
 
 
 def contains_duplicate(nums: list[int]) -> bool:
-    # TODO: implement
-    raise NotImplementedError
+    nums_set = set()
+    for n in nums:
+        if n in nums_set:
+            return True
+        else:
+            nums_set.add(n)
+    return False
 
 
 if __name__ == "__main__":
