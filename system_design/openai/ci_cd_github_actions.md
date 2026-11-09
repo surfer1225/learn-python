@@ -6,6 +6,7 @@
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×5 · [Hello Interview](https://www.hellointerview.com/guides/openai/l5) top-5 (Staff) · [Coditioning](https://www.coditioning.com/blog/16/openai-system-design-interview-questions) · [Interview Query](https://www.interviewquery.com/interview-guides/openai-software-engineer) |
 | **Most recent report** | 2026-05-26 |
 | **ShowOffer video** (watch after your attempt) | [Design a CI/CD System](https://www.youtube.com/watch?v=y32PywFi7Ek) |
+| **Second-view videos** (other channels) | [s09g — CICD / Github Action](https://www.youtube.com/watch?v=Z68PotL_O98) (Chinese; multi-tenant) · [Design & Conquer — Multi-Tenant CI/CD Pipeline](https://www.youtube.com/watch?v=xpPBn7dzfXk) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

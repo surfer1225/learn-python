@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deep Learning 第 5 章 · 机器学习基础 — 动画讲解</title>
+<!--
+  Animated walkthrough of Chapter 5 ("Machine Learning Basics") of
+  Goodfellow, Bengio & Courville, Deep Learning (deeplearningbook.org).
+
+  Open this file in Chrome. 14 scenes cover §5.1–§5.11; every curve is computed
+  live (polynomial fits, bias/variance over resampled data sets, logistic
+  regression by gradient descent, k-means, SGD), not drawn by hand.
+
+  Deep links: #s=<scene>&k=<caption>&f=<0..1> opens paused at that point.
+  #selftest draws every scene at many points and reports errors in the page.
+-->
+<style>
+  :root {
+    --bg:        #0f1115;
+    --panel:     #171a21;
+    --panel-2:   #1e222b;
+    --line:      #2a2f3a;
+    --ink:       #e6e8ee;
+    --ink-dim:   #939aab;
+    --accent:    #6aa9ff;
+    --evict:     #e2607a;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 24px 60px;
+    background: var(--bg); color: var(--ink);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .sub { color: var(--ink-dim); margin: 0 0 16px; }
+  .sub kbd {
+    font-family: var(--mono); font-size: 12px; color: var(--ink);
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px;
+  }
+  canvas {
+    display: block; width: 100%; aspect-ratio: 16 / 9;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--bg);
+  }
+
+  /* ---------- controls ---------- */
+  .controls {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px 12px; margin-top: 12px;
+  }
+  button, select {
+    font: 600 13px/1 inherit; color: var(--ink);
+    background: var(--panel-2); border: 1px solid var(--line);
+    padding: 8px 12px; border-radius: 7px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.on { border-color: var(--evict); color: var(--evict); }
+  label { color: var(--ink-dim); font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  .bar { flex: 1; min-width: 160px; height: 8px; background: var(--panel-2); border-radius: 4px; position: relative; cursor: pointer; }
+  .bar > div { position: absolute; top: 0; bottom: 0; left: 0; background: var(--accent); border-radius: 4px; }
+  .time { font-family: var(--mono); font-size: 12px; color: var(--ink-dim); min-width: 96px; text-align: right; }
+  .chapters { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .chapters button { font-weight: 500; font-size: 12px; padding: 6px 10px; }
+  .chapters button.cur { border-color: var(--accent); color: var(--accent); }
+  #err { color: var(--evict); font-family: var(--mono); white-space: pre-wrap; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Deep Learning 第 5 章 · 机器学习基础</h1>
+  <p class="sub">
+    14 个动画场景讲完 §5.1–§5.11。<kbd>空格</kbd> 播放/暂停 · <kbd>←</kbd> <kbd>→</kbd> 上/下一个场景 ·
+    <kbd>,</kbd> <kbd>.</kbd> 上/下一句字幕。勾选“朗读”用浏览器的中文语音配音；
+    “录制 .webm”会从头播放一遍并下载视频文件（录制里没有配音，字幕在画面里）。
+  </p>
+  <canvas id="screen"></canvas>
+  <div class="controls">
+    <button id="prev" title="上一个场景">⏮</button>
+    <button id="play">▶ 播放</button>
+    <button id="next" title="下一个场景">⏭</button>
+    <div class="bar" id="bar"><div id="fill"></div></div>
+    <span class="time" id="time">0:00 / 0:00</span>
+    <select id="speed">
+      <option value="0.75">0.75×</option>
+      <option value="1" selected>1×</option>
+      <option value="1.25">1.25×</option>
+      <option value="1.5">1.5×</option>
+    </select>
+    <label><input type="checkbox" id="narrate"> 朗读</label>
+    <button id="rec">⏺ 录制 .webm</button>
+  </div>
+  <div class="chapters" id="chapters"></div>
+  <div id="err"></div>
+</div>
+
+<script>
+'use strict';
+
+// ===================================================================
+// canvas + palette
+// ===================================================================
+const W = 1280, H = 720;
+const C = {
+  bg: '#0f1115', panel: '#171a21', panel2: '#1e222b', line: '#2a2f3a',
+  ink: '#e6e8ee', dim: '#939aab',
+  accent: '#6aa9ff', hit: '#4bbf87', evict: '#e2607a', warm: '#e8b04b', violet: '#b197fc',
+};
+const FONT = '-apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
+const MONO = 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace';
+
+const cv = document.getElementById('screen');
+const ctx = cv.getContext('2d');
+const DPR = Math.min(2, window.devicePixelRatio || 1);
+cv.width = W * DPR;
+cv.height = H * DPR;
+
+// ===================================================================
+// math helpers
+// ===================================================================
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+const seg = (p, i) => clamp(p - i, 0, 1);            // progress through caption i
+const fade = (p, i, d = 0.25) => ease((p - i) / d);  // fade in at the start of caption i
+const range = (n, f) => Array.from({ length: n }, (_, i) => f(i));
+const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+const sigmoid = z => 1 / (1 + Math.exp(-z));
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function gauss(r) {
+  let u = 0;
+  while (!u) u = r();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r());
+}
+
+// Gaussian elimination with partial pivoting.
+function solve(A, b) {
+  const n = b.length;
+  A = A.map(r => r.slice()); b = b.slice();
+  for (let i = 0; i < n; i++) {
+    let m = i;
+    for (let r = i + 1; r < n; r++) if (Math.abs(A[r][i]) > Math.abs(A[m][i])) m = r;
+    [A[i], A[m]] = [A[m], A[i]]; [b[i], b[m]] = [b[m], b[i]];
+    for (let r = i + 1; r < n; r++) {
+      const f = A[r][i] / A[i][i];
+      for (let c = i; c < n; c++) A[r][c] -= f * A[i][c];
+      b[r] -= f * b[i];
+    }
+  }
+  const x = new Array(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) {
+    let s = b[i];
+    for (let c = i + 1; c < n; c++) s -= A[i][c] * x[c];
+    x[i] = s / A[i][i];
+  }
+  return x;
+}
+
+// Ridge-regularised least squares on features 1, x, …, x^d (the bias is not penalised).
+function polyfit(xs, ys, d, lam) {
+  const n = d + 1;
+  const A = range(n, () => new Array(n).fill(0)), b = new Array(n).fill(0);
+  xs.forEach((x, i) => {
+    const phi = range(n, k => x ** k);
+    for (let r = 0; r < n; r++) {
+      b[r] += phi[r] * ys[i];
+      for (let c = 0; c < n; c++) A[r][c] += phi[r] * phi[c];
+    }
+  });
+  for (let k = 1; k < n; k++) A[k][k] += lam;
+  return solve(A, b);
+}
+const polyval = (c, x) => { let s = 0, xp = 1; for (const w of c) { s += w * xp; xp *= x; } return s; };
+const mse = (c, xs, ys) => mean(xs.map((x, i) => (polyval(c, x) - ys[i]) ** 2));
+
+// ===================================================================
+// drawing helpers
+// ===================================================================
+function txt(s, x, y, o = {}) {
+  ctx.save();
+  ctx.font = `${o.weight || 400} ${o.size || 20}px ${o.mono ? MONO : FONT}`;
+  ctx.fillStyle = o.color || C.ink;
+  ctx.textAlign = o.align || 'left';
+  ctx.textBaseline = o.base || 'alphabetic';
+  ctx.globalAlpha *= o.alpha ?? 1;
+  ctx.fillText(s, x, y);
+  ctx.restore();
+}
+function withAlpha(a, fn) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha *= a; fn(); ctx.restore();
+}
+function panel(x, y, w, h, title, border) {
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 12);
+  ctx.fillStyle = C.panel; ctx.fill();
+  ctx.strokeStyle = border || C.line; ctx.lineWidth = border ? 2 : 1; ctx.stroke();
+  ctx.restore();
+  if (title) txt(title, x + 16, y + 28, { size: 17, color: C.dim, weight: 600 });
+}
+function line(x1, y1, x2, y2, color, width = 2, dash) {
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = width;
+  if (dash) ctx.setLineDash(dash);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  ctx.restore();
+}
+function arrow(x1, y1, x2, y2, color, width = 2.5) {
+  line(x1, y1, x2, y2, color, width);
+  const a = Math.atan2(y2 - y1, x2 - x1), s = 11;
+  ctx.save(); ctx.fillStyle = color; ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - s * Math.cos(a - 0.4), y2 - s * Math.sin(a - 0.4));
+  ctx.lineTo(x2 - s * Math.cos(a + 0.4), y2 - s * Math.sin(a + 0.4));
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+function dot(x, y, r, color) {
+  ctx.save(); ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+}
+function box(x, y, w, h, color, r = 6) {
+  ctx.save(); ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill(); ctx.restore();
+}
+function outline(x, y, w, h, color, r = 8, width = 2) {
+  ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.stroke(); ctx.restore();
+}
+function rows(list, x, y, gap, o) { list.forEach((s, i) => txt(s, x, y + i * gap, o)); }
+function legend(items, x, y) {
+  let cx = x;
+  for (const [color, label, kind] of items) {
+    if (kind === 'line') line(cx, y - 6, cx + 22, y - 6, color, 3, [6, 5]);
+    else dot(cx + 8, y - 6, 6, color);
+    txt(label, cx + 30, y, { size: 15, color: C.dim });
+    ctx.font = `15px ${FONT}`;
+    cx += 30 + ctx.measureText(label).width + 26;
+  }
+}
+
+class Plot {
+  constructor(x, y, w, h, xr, yr) { Object.assign(this, { x, y, w, h, xr, yr }); }
+  X(v) { return this.x + (v - this.xr[0]) / (this.xr[1] - this.xr[0]) * this.w; }
+  Y(v) { return this.y + this.h - (v - this.yr[0]) / (this.yr[1] - this.yr[0]) * this.h; }
+  axes(o = {}) {
+    const y0 = this.yr[0] <= 0 && this.yr[1] >= 0 ? this.Y(0) : this.y + this.h;
+    const x0 = this.xr[0] <= 0 && this.xr[1] >= 0 ? this.X(0) : this.x;
+    line(this.x, y0, this.x + this.w, y0, C.line, 1.5);
+    line(x0, this.y, x0, this.y + this.h, C.line, 1.5);
+    if (o.xl) txt(o.xl, this.x + this.w, y0 + 22, { size: 15, color: C.dim, align: 'right' });
+    if (o.yl) txt(o.yl, x0 + 8, this.y + 14, { size: 15, color: C.dim });
+  }
+  clip(fn) {
+    ctx.save(); ctx.beginPath(); ctx.rect(this.x, this.y, this.w, this.h); ctx.clip(); fn(); ctx.restore();
+  }
+  fn(f, o = {}) {
+    const span = this.yr[1] - this.yr[0];
+    this.clip(() => {
+      ctx.strokeStyle = o.color || C.hit; ctx.lineWidth = o.width || 3;
+      ctx.globalAlpha *= o.alpha ?? 1;
+      if (o.dash) ctx.setLineDash(o.dash);
+      ctx.beginPath();
+      const a = o.from ?? this.xr[0], b = o.to ?? this.xr[1], n = o.n || 240;
+      for (let i = 0; i <= n; i++) {
+        const v = a + (b - a) * i / n;
+        const py = this.Y(clamp(f(v), this.yr[0] - 3 * span, this.yr[1] + 3 * span));
+        i ? ctx.lineTo(this.X(v), py) : ctx.moveTo(this.X(v), py);
+      }
+      ctx.stroke();
+    });
+  }
+  poly(pts, o = {}) {
+    if (pts.length < 2) return;
+    this.clip(() => {
+      ctx.strokeStyle = o.color || C.hit; ctx.lineWidth = o.width || 3;
+      ctx.globalAlpha *= o.alpha ?? 1;
+      if (o.dash) ctx.setLineDash(o.dash);
+      ctx.beginPath();
+      pts.forEach(([u, v], i) => i ? ctx.lineTo(this.X(u), this.Y(v)) : ctx.moveTo(this.X(u), this.Y(v)));
+      ctx.stroke();
+    });
+  }
+  dots(xs, ys, o = {}) {
+    const n = o.count ?? xs.length;
+    withAlpha(o.alpha ?? 1, () => {
+      for (let i = 0; i < n; i++) dot(this.X(xs[i]), this.Y(ys[i]), o.r || 6, o.color || C.accent);
+    });
+  }
+  // Fill cells by class probability: blue for class 1, red for class 0.
+  shade(prob, nx = 40, ny = 30) {
+    const cw = this.w / nx, ch = this.h / ny;
+    for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
+      const x = this.xr[0] + (i + 0.5) / nx * (this.xr[1] - this.xr[0]);
+      const y = this.yr[1] - (j + 0.5) / ny * (this.yr[1] - this.yr[0]);
+      const q = prob(x, y, i, j);
+      ctx.fillStyle = q >= 0.5 ? `rgba(106,169,255,${(q - 0.5) * 0.7})` : `rgba(226,96,122,${(0.5 - q) * 0.7})`;
+      ctx.fillRect(this.x + i * cw, this.y + j * ch, cw + 0.6, ch + 0.6);
+    }
+  }
+}
+
+// ===================================================================
+// data (seeded so every run looks the same)
+// ===================================================================
+const truef = x => Math.sin(Math.PI * x);
+
+// §5.1 linear regression trained by gradient descent
+const rL = mulberry32(1);
+const LX = range(16, () => 0.05 + 0.95 * rL());
+const LY = LX.map(x => 2 * x + 0.5 + 0.18 * gauss(rL));
+const GD = [];
+{
+  let w = -0.5, b = 1.6;
+  for (let s = 0; s < 80; s++) {
+    let gw = 0, gb = 0, e2 = 0;
+    LX.forEach((x, i) => { const e = w * x + b - LY[i]; gw += 2 * e * x; gb += 2 * e; e2 += e * e; });
+    GD.push({ w, b, mse: e2 / LX.length });
+    w -= 0.6 * gw / LX.length; b -= 0.6 * gb / LX.length;
+  }
+}
+
+// §5.2 polynomial capacity: 12 training points, 80 test points
+const rC = mulberry32(5);
+const TX = range(12, i => -0.95 + 1.9 * i / 11 + (rC() - 0.5) * 0.08);
+const TY = TX.map(x => truef(x) + 0.25 * gauss(rC));
+const VX = range(80, () => rC() * 2 - 1);
+const VY = VX.map(x => truef(x) + 0.25 * gauss(rC));
+const FIT = range(10, d => polyfit(TX, TY, d, 1e-9));
+const ERR = FIT.map(c => ({ train: mse(c, TX, TY), test: mse(c, VX, VY) }));
+const BEST_D = ERR.reduce((bi, e, i) => e.test < ERR[bi].test ? i : bi, 0);
+
+// §5.4 bias/variance: fixed x, noise resampled for 30 data sets
+const BVX = range(12, i => -0.95 + 1.9 * i / 11);
+const BVD = range(30, s => { const r = mulberry32(100 + s); return BVX.map(x => truef(x) + 0.25 * gauss(r)); });
+const BVFIT = range(10, d => BVD.map(y => polyfit(BVX, y, d, 1e-9)));
+const BVSTAT = BVFIT.map(fits => {
+  const grid = range(41, i => -0.9 + 1.8 * i / 40);
+  let b2 = 0, va = 0;
+  for (const x of grid) {
+    const ps = fits.map(c => polyval(c, x)), m = mean(ps);
+    b2 += (m - truef(x)) ** 2;
+    va += mean(ps.map(v => (v - m) ** 2));
+  }
+  return { bias2: b2 / grid.length, variance: va / grid.length };
+});
+
+// §5.5 MLE for the mean of N(μ, 1)
+const rM = mulberry32(7);
+const MX = range(8, () => 1.2 + gauss(rM));
+const MX_BAR = mean(MX);
+const logLik = mu => MX.reduce((s, x) => s - 0.5 * (x - mu) ** 2 - 0.5 * Math.log(2 * Math.PI), 0);
+
+// §5.6 Bayesian update of θ with prior N(0, 1) and data ~ N(1.5, 1)
+const rB = mulberry32(8);
+const BX = range(60, () => 1.5 + gauss(rB));
+
+// §5.7 logistic regression on two blobs, then a ring that no line can split
+const rS = mulberry32(11);
+const BLOBS = [];
+for (let i = 0; i < 40; i++) {
+  BLOBS.push([-0.8 + 0.6 * gauss(rS), -0.4 + 0.6 * gauss(rS), 0]);
+  BLOBS.push([0.8 + 0.6 * gauss(rS), 0.5 + 0.6 * gauss(rS), 1]);
+}
+function trainLogistic(pts, steps, lr, w0) {
+  let [a, b, c] = w0;
+  const out = [];
+  for (let s = 0; s <= steps; s++) {
+    let ga = 0, gb = 0, gc = 0, nll = 0;
+    for (const [x, y, k] of pts) {
+      const q = sigmoid(a * x + b * y + c), e = q - k;
+      ga += e * x; gb += e * y; gc += e;
+      nll -= Math.log(k ? Math.max(q, 1e-12) : Math.max(1 - q, 1e-12));
+    }
+    out.push({ a, b, c, loss: nll / pts.length });
+    a -= lr * ga / pts.length; b -= lr * gb / pts.length; c -= lr * gc / pts.length;
+  }
+  return out;
+}
+const LOGI = trainLogistic(BLOBS, 150, 1.0, [-1.2, 1.4, 0.8]);
+const accOf = (pts, prob) => mean(pts.map(([x, y, k]) => (prob(x, y) >= 0.5) === (k === 1) ? 1 : 0));
+
+const rRing = mulberry32(12);
+const RING = [];
+for (let i = 0; i < 70; i++) {
+  const a1 = rRing() * 2 * Math.PI, r1 = 0.55 + 0.18 * gauss(rRing);
+  RING.push([r1 * Math.cos(a1), r1 * Math.sin(a1), 1]);
+  const a2 = rRing() * 2 * Math.PI, r2 = 1.45 + 0.2 * gauss(rRing);
+  RING.push([r2 * Math.cos(a2), r2 * Math.sin(a2), 0]);
+}
+const RING_LR = trainLogistic(RING, 300, 1.0, [0, 0, 0]).pop();
+const ringLR = (x, y) => sigmoid(RING_LR.a * x + RING_LR.b * y + RING_LR.c);
+function knnProb(pts, k, x, y) {
+  const d = pts.map(([u, v, c]) => [(u - x) ** 2 + (v - y) ** 2, c]).sort((p, q) => p[0] - q[0]);
+  return mean(d.slice(0, k).map(p => p[1]));
+}
+function buildTree(pts, depth) {
+  const n = pts.length, ones = pts.filter(p => p[2]).length;
+  if (depth === 0 || ones === 0 || ones === n) return { v: ones / n };
+  const gini = q => 2 * q * (1 - q);
+  let best = null;
+  for (const d of [0, 1]) {
+    const s = [...pts].sort((p, q) => p[d] - q[d]);
+    let l1 = 0;
+    for (let i = 1; i < n; i++) {
+      l1 += s[i - 1][2];
+      if (s[i][d] === s[i - 1][d]) continue;
+      const g = i * gini(l1 / i) + (n - i) * gini((ones - l1) / (n - i));
+      if (!best || g < best.g) best = { g, d, t: (s[i][d] + s[i - 1][d]) / 2 };
+    }
+  }
+  return {
+    d: best.d, t: best.t,
+    l: buildTree(pts.filter(p => p[best.d] < best.t), depth - 1),
+    r: buildTree(pts.filter(p => p[best.d] >= best.t), depth - 1),
+  };
+}
+const TREE = buildTree(RING, 4);
+const treeProb = (x, y) => { let n = TREE; while (n.v === undefined) n = [x, y][n.d] < n.t ? n.l : n.r; return n.v; };
+// kNN per cell is too slow to redo every frame, so cache the 36×36 grid once.
+const RING_N = 36, RING_R = 2.2;
+const KNN_GRID = [];
+for (let i = 0; i < RING_N; i++) for (let j = 0; j < RING_N; j++) {
+  const x = -RING_R + (i + 0.5) / RING_N * 2 * RING_R, y = RING_R - (j + 0.5) / RING_N * 2 * RING_R;
+  KNN_GRID.push(knnProb(RING, 5, x, y));
+}
+const RING_ACC = [accOf(RING, ringLR), accOf(RING, (x, y) => knnProb(RING, 5, x, y)), accOf(RING, treeProb)];
+
+// §5.8 PCA cloud and k-means
+const rP = mulberry32(13);
+const PCA_PTS = range(120, () => {
+  const u = 1.2 * gauss(rP), v = 0.35 * gauss(rP), a = 0.5;
+  return [u * Math.cos(a) - v * Math.sin(a), u * Math.sin(a) + v * Math.cos(a)];
+});
+const PCA = (() => {
+  const mx = mean(PCA_PTS.map(p => p[0])), my = mean(PCA_PTS.map(p => p[1]));
+  const a = mean(PCA_PTS.map(p => (p[0] - mx) ** 2)), c = mean(PCA_PTS.map(p => (p[1] - my) ** 2));
+  const b = mean(PCA_PTS.map(p => (p[0] - mx) * (p[1] - my)));
+  const h = Math.sqrt(((a - c) / 2) ** 2 + b * b), phi = 0.5 * Math.atan2(2 * b, a - c);
+  return { mx, my, l1: (a + c) / 2 + h, l2: (a + c) / 2 - h, d1: [Math.cos(phi), Math.sin(phi)], d2: [-Math.sin(phi), Math.cos(phi)] };
+})();
+
+const rK = mulberry32(14);
+const KM_PTS = [];
+for (const [cx, cy] of [[-1.5, 1], [1.5, 1.2], [0, -1.3]]) {
+  for (let i = 0; i < 45; i++) KM_PTS.push([cx + 0.45 * gauss(rK), cy + 0.45 * gauss(rK)]);
+}
+const KM_C = [[[-2.4, -1.9], [-1.9, -2.2], [2.5, 2.1]]], KM_A = [null];
+for (let it = 0; it < 10; it++) {
+  const c = KM_C[KM_C.length - 1];
+  const a = KM_PTS.map(([x, y]) => {
+    let bi = 0, bd = Infinity;
+    c.forEach(([u, v], k) => { const d = (x - u) ** 2 + (y - v) ** 2; if (d < bd) { bd = d; bi = k; } });
+    return bi;
+  });
+  const nc = c.map((old, k) => {
+    const m = KM_PTS.filter((_, i) => a[i] === k);
+    return m.length ? [mean(m.map(q => q[0])), mean(m.map(q => q[1]))] : old;
+  });
+  KM_A.push(a); KM_C.push(nc);
+  if (nc.every((q, k) => Math.hypot(q[0] - c[k][0], q[1] - c[k][1]) < 1e-9)) break;
+}
+const KM_T = KM_A.length - 1;
+const KM_COL = [C.accent, C.warm, C.hit];
+
+// §5.9 GD vs SGD on a rotated quadratic bowl (condition number 6)
+const SA = 0.45, SC = Math.cos(SA), SS = Math.sin(SA), KAPPA = 6;
+const toU = ([a, b]) => [SC * a + SS * b, -SS * a + SC * b];
+const fromU = ([u, v]) => [SC * u - SS * v, SS * u + SC * v];
+const bowlGrad = w => { const [u, v] = toU(w); return fromU([u, KAPPA * v]); };
+const START = [-2.5, 1.3];
+const GD_PATH = [START], SGD_PATH = [START];
+{
+  let w = START;
+  for (let i = 0; i < 30; i++) { const g = bowlGrad(w); w = [w[0] - 0.3 * g[0], w[1] - 0.3 * g[1]]; GD_PATH.push(w); }
+  const r = mulberry32(15);
+  w = START;
+  for (let i = 0; i < 70; i++) {
+    const g = bowlGrad(w);
+    w = [w[0] - 0.12 * (g[0] + 1.6 * gauss(r)), w[1] - 0.12 * (g[1] + 1.6 * gauss(r))];
+    SGD_PATH.push(w);
+  }
+}
+
+// §5.11 curse of dimensionality, smoothness prior, manifold
+const rD = mulberry32(16);
+const CUBE = range(20, () => [rD(), rD(), rD()]);
+const cell = v => Math.min(9, Math.floor(v * 10));
+const OCC = [
+  new Set(CUBE.map(p => cell(p[0]))).size,
+  new Set(CUBE.map(p => cell(p[0]) + ',' + cell(p[1]))).size,
+  new Set(CUBE.map(p => cell(p[0]) + ',' + cell(p[1]) + ',' + cell(p[2]))).size,
+];
+const smoothf = x => Math.sin(1.3 * x) + 0.35 * Math.sin(4 * x);
+const rG = mulberry32(17);
+const SMX = [...range(7, () => 0.2 + 3.2 * rG()), ...range(7, () => 7 + 2.8 * rG())];
+const SMY = SMX.map(x => smoothf(x) + 0.05 * gauss(rG));
+const nn1 = x => SMY[SMX.reduce((bi, v, i) => Math.abs(v - x) < Math.abs(SMX[bi] - x) ? i : bi, 0)];
+const rSp = mulberry32(18);
+const SPIRAL = range(160, i => {
+  const t = 0.6 + (3 * Math.PI - 0.6) * i / 159;
+  return { t, x: 0.25 * t * Math.cos(t) + 0.04 * gauss(rSp), y: 0.25 * t * Math.sin(t) + 0.04 * gauss(rSp), n: gauss(rSp) };
+});
+
+// ===================================================================
+// scenes
+// ===================================================================
+const TOPICS = ['5.1 学习算法', '5.2 容量·过拟合', '5.3 超参数·验证集', '5.4 偏差·方差', '5.5 最大似然', '5.6 贝叶斯',
+  '5.7 监督学习', '5.8 无监督学习', '5.9 SGD', '5.10 构建算法', '5.11 为何要深度学习'];
+
+const SCENES = [
+// ------------------------------------------------------------------ 0
+{
+  title: '开场', sec: '第 5 章', noHeader: true,
+  caps: [
+    '这一章是整本书的地基：后面所有的深度学习方法，都建立在这里的概念之上。',
+    '我们用动画走一遍：学习是什么、容量与过拟合、正则化、偏差与方差、最大似然、贝叶斯、SGD，以及为什么需要深度学习。',
+  ],
+  draw(p) {
+    withAlpha(fade(p, 0, 0.15), () => {
+      txt('Deep Learning · 第 5 章', W / 2, 200, { size: 26, color: C.dim, align: 'center' });
+      txt('机器学习基础', W / 2, 282, { size: 68, weight: 700, align: 'center' });
+      txt('Goodfellow, Bengio & Courville · deeplearningbook.org', W / 2, 328, { size: 18, color: C.dim, align: 'center' });
+    });
+    const lit = p < 1 ? 0 : Math.floor(seg(p, 1) * 12);
+    withAlpha(fade(p, 0, 0.3), () => TOPICS.forEach((t, i) => {
+      const row = i < 6 ? 0 : 1, col = row ? i - 6 : i, n = row ? 5 : 6;
+      const tw = 180, gap = 12, x = W / 2 - (n * tw + (n - 1) * gap) / 2 + col * (tw + gap), y = 390 + row * 72;
+      panel(x, y, tw, 56, null, i < lit ? C.accent : null);
+      txt(t, x + tw / 2, y + 35, { size: 17, align: 'center', weight: 600, color: i < lit ? C.ink : C.dim });
+    }));
+  },
+},
+// ------------------------------------------------------------------ 1
+{
+  title: '学习算法', sec: '§5.1',
+  caps: [
+    'Mitchell 的定义：如果一个程序在任务 T 上、以指标 P 衡量的表现随经验 E 而提高，就说它从经验 E 中学习。',
+    '最简单的例子是线性回归：任务 T 是根据 x 预测 y，指标 P 是均方误差 MSE，经验 E 是训练数据。',
+    '学习就是调整参数 w 和 b。梯度下降每一步都让残差（红色竖线）整体变短，MSE 随之下降。',
+    '但要注意：训练误差低不等于学会了。我们真正关心的是在没见过的数据上的误差，这就是下一节的主题。',
+  ],
+  draw(p) {
+    const cards = [
+      ['T', '任务 Task', '根据 x 预测 y', C.accent],
+      ['P', '指标 Performance', 'MSE = (1/m) Σ (ŷᵢ − yᵢ)²', C.warm],
+      ['E', '经验 Experience', '训练集 {(xᵢ, yᵢ)}, i = 1…m', C.hit],
+    ];
+    cards.forEach(([k, name, body, col], i) => withAlpha(ease((p - i * 0.25) / 0.2), () => {
+      const y = 92 + i * 100;
+      panel(760, y, 460, 86);
+      txt(k, 792, y + 58, { size: 40, weight: 700, color: col });
+      txt(name, 846, y + 36, { size: 18, weight: 600 });
+      txt(body, 846, y + 66, { size: 17, color: C.dim, mono: i === 1 });
+    }));
+
+    withAlpha(fade(p, 1), () => {
+      panel(50, 84, 680, 512);
+      const pl = new Plot(80, 110, 620, 450, [0, 1.05], [-0.3, 3.2]);
+      pl.axes({ xl: 'x', yl: 'y' });
+      const s = p < 2 ? 0 : ease((p - 2) / 1.6) * (GD.length - 1);
+      const i0 = Math.floor(s), i1 = Math.min(GD.length - 1, i0 + 1), f = s - i0;
+      const w = lerp(GD[i0].w, GD[i1].w, f), b = lerp(GD[i0].b, GD[i1].b, f);
+      const cur = mean(LX.map((x, i) => (w * x + b - LY[i]) ** 2));
+      if (p >= 2) pl.clip(() => LX.forEach((x, i) => line(pl.X(x), pl.Y(LY[i]), pl.X(x), pl.Y(w * x + b), C.evict, 2)));
+      pl.fn(x => w * x + b, { color: C.hit, width: 3.5 });
+      pl.dots(LX, LY, { color: C.accent });
+      txt(`ŷ = w·x + b    w = ${w.toFixed(2)}   b = ${b.toFixed(2)}   MSE = ${cur.toFixed(3)}`, 80, 584, { size: 16, mono: true, color: C.dim });
+
+      withAlpha(fade(p, 2), () => {
+        panel(760, 400, 460, 196, 'MSE 随迭代下降');
+        const mp = new Plot(790, 440, 400, 120, [0, GD.length - 1], [0, GD[0].mse * 1.05]);
+        mp.axes({ xl: '迭代步' });
+        mp.poly(GD.slice(0, i0 + 1).map((g, k) => [k, g.mse]).concat([[s, cur]]), { color: C.warm, width: 3 });
+      });
+      withAlpha(fade(p, 3), () => {
+        box(360, 116, 330, 44, 'rgba(232,176,75,0.15)', 8);
+        outline(360, 116, 330, 44, C.warm);
+        txt('训练误差低 ≠ 泛化好', 525, 145, { size: 19, weight: 600, color: C.warm, align: 'center' });
+      });
+    });
+  },
+},
+// ------------------------------------------------------------------ 2
+{
+  title: '容量、过拟合与欠拟合', sec: '§5.2',
+  caps: [
+    '机器学习的核心挑战是泛化（generalization）：在没见过的新数据上也要表现好。蓝点是训练集，橙点是测试集。',
+    '用 d 阶多项式去拟合。阶数越高，能表示的函数越多，我们说模型的容量（capacity）越大。',
+    '1 阶是一条直线，连训练集都拟合不好，这叫欠拟合（underfitting）。',
+    '3 阶基本抓住了真实规律：训练误差和测试误差都低。',
+    '9 阶几乎穿过每个训练点，却在点与点之间乱摆：训练误差最低，测试误差反而变高，这叫过拟合（overfitting）。',
+    '把阶数从 0 扫到 9：训练误差一路下降，测试误差先降后升，呈 U 形。最佳容量在中间。',
+  ],
+  draw(p) {
+    panel(50, 84, 720, 512);
+    const pl = new Plot(70, 110, 680, 440, [-1.05, 1.05], [-1.9, 1.9]);
+    pl.axes({ xl: 'x', yl: 'y' });
+    pl.fn(truef, { color: C.dim, width: 2, dash: [6, 6], alpha: p < 2 ? 1 : 0.4 });
+    pl.dots(VX, VY, { color: C.warm, r: 3, alpha: 0.5 });
+    pl.dots(TX, TY, { color: C.accent });
+    legend([[C.accent, '训练点'], [C.warm, '测试点'], [C.dim, '真实函数 sin(πx)', 'line']], 76, 582);
+
+    let a = 1, b = 1, t = 0;
+    if (p >= 3 && p < 4) { a = 1; b = 3; t = ease(seg(p, 3)); }
+    else if (p >= 4 && p < 5) { a = 3; b = 9; t = ease(seg(p, 4)); }
+    else if (p >= 5) { const d = seg(p, 5) * 9; a = Math.floor(d); b = Math.min(9, a + 1); t = d - a; }
+    const dCur = t < 0.5 ? a : b;
+    withAlpha(fade(p, 1) * (1 - fade(p, 2, 0.15)), () => {
+      txt('ŷ = w₀ + w₁x + w₂x² + … + w_d·xᵈ', 90, 145, { size: 20, mono: true });
+      txt('阶数 d ↑  ⇒  容量 ↑', 90, 178, { size: 18, color: C.dim });
+    });
+    if (p >= 2) {
+      withAlpha(fade(p, 2), () => {
+        pl.fn(x => lerp(polyval(FIT[a], x), polyval(FIT[b], x), t), { color: C.hit, width: 3.5 });
+        const [tag, col] = dCur <= 2 ? ['欠拟合', C.evict] : dCur <= 6 ? ['刚好', C.hit] : ['过拟合', C.warm];
+        txt(`d = ${dCur}`, 90, 148, { size: 30, weight: 700, mono: true });
+        txt(tag, 200, 146, { size: 22, weight: 700, color: col });
+        txt(`训练 MSE ${ERR[dCur].train.toFixed(3)}   测试 MSE ${ERR[dCur].test.toFixed(3)}`, 90, 178, { size: 16, mono: true, color: C.dim });
+      });
+    }
+
+    withAlpha(fade(p, 2), () => {
+      panel(790, 84, 440, 512, '误差 vs 容量');
+      const ep = new Plot(830, 130, 380, 400, [-0.5, 9.5], [0, 0.7]);
+      ep.axes();
+      for (let d = 0; d <= 9; d++) txt(String(d), ep.X(d), 552, { size: 14, color: C.dim, align: 'center', mono: true });
+      txt('多项式阶数（容量）', 1020, 578, { size: 15, color: C.dim, align: 'center' });
+      [0.2, 0.4, 0.6].forEach(v => txt(v.toFixed(1), 822, ep.Y(v) + 5, { size: 13, color: C.dim, align: 'right', mono: true }));
+      legend([[C.accent, '训练误差'], [C.warm, '测试误差']], 960, 122);
+      const clip = v => Math.min(v, 0.68);
+      const reveal = [[1, 2.2], [3, 3.9], [9, 4.9]].filter(([, at]) => p >= at).map(([d]) => d);
+      if (p < 5) {
+        for (const d of reveal) { dot(ep.X(d), ep.Y(clip(ERR[d].train)), 6, C.accent); dot(ep.X(d), ep.Y(clip(ERR[d].test)), 6, C.warm); }
+      } else {
+        const ds = seg(p, 5) * 9, k = Math.floor(ds);
+        for (const key of ['train', 'test']) {
+          const pts = range(k + 1, d => [d, clip(ERR[d][key])]);
+          if (k < 9) pts.push([ds, clip(lerp(ERR[k][key], ERR[k + 1][key], ds - k))]);
+          ep.poly(pts, { color: key === 'train' ? C.accent : C.warm, width: 3 });
+          pts.slice(0, k + 1).forEach(([d, v]) => dot(ep.X(d), ep.Y(v), 4.5, key === 'train' ? C.accent : C.warm));
+        }
+        withAlpha(ease((seg(p, 5) - 0.85) / 0.1), () => {
+          line(ep.X(BEST_D), ep.y, ep.X(BEST_D), ep.y + ep.h, C.hit, 2, [5, 5]);
+          txt('最佳容量', ep.X(BEST_D) + 8, ep.y + 20, { size: 16, color: C.hit, weight: 600 });
+        });
+      }
+    });
+  },
+},
+// ------------------------------------------------------------------ 3
+{
+  title: '正则化：权重衰减', sec: '§5.2.2',
+  caps: [
+    '除了换模型，还可以在代价函数里加惩罚项来控制容量。还是 9 阶多项式，先不加惩罚，曲线过拟合。',
+    '加上权重衰减（weight decay）：J(w) = MSE + λ·wᵀw。它偏好更小的权重，曲线立刻平滑了。右边是各个权重的大小。',
+    'λ 太大时，权重被压到接近 0，曲线变平，又欠拟合了。',
+    'λ 适中时，曲线平滑，贴近真实函数，测试误差最低。',
+    'λ 趋于 0 时惩罚消失，又回到过拟合。λ 本身是一个需要挑选的超参数。',
+    '正则化指的是任何为了降低泛化误差、而不是训练误差所做的修改。没有免费午餐：没有哪种正则化对所有任务都最好。',
+  ],
+  draw(p) {
+    const K = [-9, -3, 1, -3, -9, -3];
+    const i = Math.min(Math.floor(p), K.length - 1);
+    const ll = lerp(i ? K[i - 1] : -9, K[i], ease((p - i) * 1.6));
+    const c = polyfit(TX, TY, 9, 10 ** ll);
+
+    panel(50, 84, 720, 512);
+    const pl = new Plot(70, 110, 680, 440, [-1.05, 1.05], [-1.9, 1.9]);
+    pl.axes({ xl: 'x', yl: 'y' });
+    pl.fn(truef, { color: C.dim, width: 2, dash: [6, 6], alpha: 0.5 });
+    pl.dots(VX, VY, { color: C.warm, r: 3, alpha: 0.5 });
+    pl.dots(TX, TY, { color: C.accent });
+    pl.fn(x => polyval(c, x), { color: C.hit, width: 3.5 });
+    legend([[C.accent, '训练点'], [C.warm, '测试点'], [C.dim, '真实函数', 'line']], 76, 582);
+    withAlpha(fade(p, 5), () => {
+      box(470, 116, 270, 44, 'rgba(177,151,252,0.15)', 8);
+      outline(470, 116, 270, 44, C.violet);
+      txt('没有免费午餐定理', 605, 145, { size: 19, weight: 600, color: C.violet, align: 'center' });
+    });
+
+    panel(790, 84, 440, 512);
+    txt('J(w) = MSE_train', 816, 130, { size: 22, mono: true });
+    withAlpha(fade(p, 1), () => txt('+ λ·wᵀw', 1052, 130, { size: 22, mono: true, color: C.warm }));
+    const lamStr = ll < -8.5 ? '≈ 0' : '= ' + (10 ** ll).toExponential(1);
+    txt(`λ ${lamStr}`, 816, 182, { size: 30, weight: 700, mono: true, color: C.warm });
+    const [tag, col] = ll > -0.5 ? ['欠拟合', C.evict] : ll > -4.5 ? ['刚好', C.hit] : ['过拟合', C.warm];
+    txt(tag, 1200, 180, { size: 22, weight: 700, color: col, align: 'right' });
+    txt(`训练 MSE ${mse(c, TX, TY).toFixed(3)}   测试 MSE ${mse(c, VX, VY).toFixed(3)}`, 816, 216, { size: 16, mono: true, color: C.dim });
+
+    txt('|w_k|（对数刻度）', 816, 262, { size: 16, color: C.dim });
+    const bx = 830, bw = 34, base = 548, hmax = 250;
+    [1e-2, 1, 1e2].forEach(v => {
+      const y = base - (Math.log10(v) + 2) / 5 * hmax;
+      line(bx - 8, y, bx + 9 * 42, y, C.line, 1, [3, 4]);
+      txt(v >= 1 ? String(v) : '0.01', bx - 12, y + 5, { size: 12, color: C.dim, align: 'right', mono: true });
+    });
+    for (let k = 1; k <= 9; k++) {
+      const h = clamp((Math.log10(Math.abs(c[k]) + 1e-12) + 2) / 5, 0, 1) * hmax;
+      box(bx + (k - 1) * 42, base - h, bw, Math.max(h, 2), C.violet, 4);
+      txt(`w${'₁₂₃₄₅₆₇₈₉'[k - 1]}`, bx + (k - 1) * 42 + bw / 2, base + 22, { size: 15, color: C.dim, align: 'center' });
+    }
+  },
+},
+// ------------------------------------------------------------------ 4
+{
+  title: '超参数与验证集', sec: '§5.3',
+  caps: [
+    '阶数 d、λ 这类超参数不由学习算法学出来。如果直接在训练集上挑，训练误差最低的永远是容量最大的模型。',
+    '所以从训练数据里留出一部分作为验证集（validation set），用验证误差来挑超参数。这次选中的是 3 阶。',
+    '测试集要锁起来，只在最后用一次，用来报告泛化误差。用测试集调参，报出来的数字就偏乐观了。',
+    '数据少的时候用 k 折交叉验证：把数据分成 k 份，轮流用其中一份做验证，最后取 k 次误差的平均。',
+  ],
+  draw(p) {
+    const bw = 46, gap = 6;
+    withAlpha(1 - fade(p, 3, 0.2), () => {
+      const x0 = 120, y = 110;
+      for (let i = 0; i < 20; i++) {
+        let x = x0 + i * (bw + gap);
+        if (i >= 16) x += 30 * ease(seg(p, 2) / 0.3);
+        box(x, y, bw, 64, C.accent);
+        if (i >= 12 && i < 16) withAlpha(fade(p, 1), () => box(x, y, bw, 64, C.warm));
+        if (i >= 16) withAlpha(fade(p, 2), () => box(x, y, bw, 64, C.evict));
+      }
+      const mid = (a, b) => x0 + (a + b + 1) / 2 * (bw + gap) - gap / 2;
+      withAlpha(1 - fade(p, 1), () => txt('全部训练数据', mid(0, 19), 206, { size: 18, color: C.accent, align: 'center' }));
+      withAlpha(fade(p, 1), () => {
+        txt('训练集', mid(0, 11), 206, { size: 18, color: C.accent, align: 'center' });
+        txt('验证集', mid(12, 15), 206, { size: 18, color: C.warm, align: 'center' });
+      });
+      withAlpha(fade(p, 2), () => txt('测试集 🔒', mid(16, 19) + 30, 206, { size: 18, color: C.evict, align: 'center' }));
+
+      panel(240, 240, 800, 250);
+      const cx = [330, 560, 820];
+      txt('阶数 d', cx[0], 286, { size: 18, color: C.dim, align: 'center' });
+      txt('训练 MSE', cx[1], 286, { size: 18, color: C.dim, align: 'center' });
+      withAlpha(fade(p, 1), () => txt('验证 MSE', cx[2], 286, { size: 18, color: C.dim, align: 'center' }));
+      [1, 3, 9].forEach((d, r) => {
+        const y = 340 + r * 50;
+        txt(String(d), cx[0], y, { size: 22, mono: true, align: 'center' });
+        txt(ERR[d].train.toFixed(3), cx[1], y, { size: 22, mono: true, align: 'center' });
+        withAlpha(fade(p, 1), () => txt(ERR[d].test.toFixed(3), cx[2], y, { size: 22, mono: true, align: 'center' }));
+      });
+      withAlpha(1 - fade(p, 1), () => {
+        outline(cx[1] - 70, 412, 140, 40, C.warm);
+        txt('← 训练集上选：d = 9 ✗', cx[1] + 90, 440, { size: 17, color: C.warm });
+      });
+      withAlpha(fade(p, 1), () => {
+        outline(cx[2] - 70, 312, 140, 40, C.hit);
+        txt('✓ d = 3', cx[2] + 84, 340, { size: 17, color: C.hit });
+      });
+      withAlpha(fade(p, 2), () => txt('测试集：调参全部结束后才用一次 → 报告泛化误差', W / 2, 540, { size: 20, color: C.evict, align: 'center' }));
+    });
+
+    withAlpha(fade(p, 3, 0.2), () => {
+      const x0 = 210;
+      txt('k = 4 折交叉验证（16 份数据，每折 4 份）', W / 2, 120, { size: 20, color: C.dim, align: 'center' });
+      for (let r = 0; r < 4; r++) withAlpha(ease((seg(p, 3) - r * 0.17) / 0.12), () => {
+        const y = 150 + r * 80;
+        txt(`第 ${r + 1} 轮`, x0 - 20, y + 40, { size: 18, color: C.dim, align: 'right' });
+        for (let i = 0; i < 16; i++) box(x0 + i * (bw + gap), y, bw, 56, i >= 4 * r && i < 4 * r + 4 ? C.warm : C.accent);
+        txt(`→ 验证误差 e${'₁₂₃₄'[r]}`, x0 + 16 * (bw + gap) + 14, y + 38, { size: 19, mono: true, color: C.warm });
+      });
+      withAlpha(ease((seg(p, 3) - 0.75) / 0.1), () =>
+        txt('CV 误差 = (e₁ + e₂ + e₃ + e₄) / 4', W / 2, 520, { size: 26, mono: true, weight: 700, align: 'center' }));
+      legend([[C.accent, '训练'], [C.warm, '验证']], 560, 572);
+    });
+  },
+},
+// ------------------------------------------------------------------ 5
+{
+  title: '估计量、偏差与方差', sec: '§5.4',
+  caps: [
+    '估计量 θ̂ 是训练数据的函数。数据是随机采样的，所以 θ̂ 也是随机变量。把每次估计想成一支飞镖，靶心是真值 θ。',
+    '偏差是平均落点离靶心多远：Bias = E[θ̂] − θ。方差是换一份数据后落点抖动有多大：Var(θ̂)。',
+    '做个实验：x 固定，噪声重新采样，生成 20 份训练集，每份都分别用 1 阶和 9 阶多项式拟合一次。',
+    '1 阶模型的 20 条线彼此很接近，但平均起来（白色虚线）也偏离真实曲线：高偏差，低方差。',
+    '9 阶模型的平均几乎和真实曲线重合，但每条线都抖得很厉害：低偏差，高方差。',
+    '均方误差 MSE = 偏差² + 方差。容量增大时偏差下降、方差上升，两者相加就得到 U 形的测试误差。',
+  ],
+  draw(p) {
+    // dartboards
+    withAlpha(1 - fade(p, 2, 0.15), () => {
+      const labels = ['低偏差 · 低方差', '低偏差 · 高方差', '高偏差 · 低方差', '高偏差 · 高方差'];
+      const bias = [0, 0, 62, 62], spread = [11, 36, 11, 36];
+      labels.forEach((lab, j) => {
+        const cx = 175 + j * 310, cy = 300, R = 110;
+        for (let k = 4; k >= 1; k--) dot(cx, cy, R * k / 4, k % 2 ? C.panel2 : C.panel);
+        dot(cx, cy, 5, C.dim);
+        txt(lab, cx, cy + R + 40, { size: 19, align: 'center', weight: 600 });
+        const r = mulberry32(200 + j), n = p < 1 ? Math.ceil(seg(p, 0) * 12) : 12;
+        const darts = range(12, () => [cx + bias[j] * 0.75 + spread[j] * gauss(r), cy - bias[j] * 0.66 + spread[j] * gauss(r)]);
+        darts.slice(0, n).forEach(([x, y]) => dot(x, y, 5, C.accent));
+        withAlpha(fade(p, 1), () => {
+          const mx = mean(darts.map(d => d[0])), my = mean(darts.map(d => d[1]));
+          if (bias[j]) { arrow(cx, cy, mx, my, C.warm); txt('偏差', (cx + mx) / 2 - 36, (cy + my) / 2 - 2, { size: 16, color: C.warm }); }
+          ctx.save(); ctx.strokeStyle = C.violet; ctx.setLineDash([5, 4]); ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(mx, my, spread[j] * 1.8, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+          txt('方差', mx + spread[j] * 1.8 + 4, my - 6, { size: 15, color: C.violet });
+        });
+      });
+      txt('靶心 = 真值 θ    蓝点 = 不同训练集得到的 θ̂', W / 2, 120, { size: 19, color: C.dim, align: 'center' });
+      withAlpha(fade(p, 1), () => txt('Bias(θ̂) = E[θ̂] − θ        Var(θ̂) = E[(θ̂ − E[θ̂])²]', W / 2, 160, { size: 21, mono: true, align: 'center' }));
+    });
+
+    // 20 fits of degree 1 and degree 9
+    withAlpha(fade(p, 2, 0.15) * (1 - fade(p, 5, 0.15)), () => {
+      const count = p < 3 ? Math.ceil(seg(p, 2) * 20) : 20;
+      [[1, 60, '1 阶（容量低）'], [9, 660, '9 阶（容量高）']].forEach(([d, x, title], side) => {
+        const focus = p < 3 ? 1 : (p < 4 ? side === 0 : side === 1) ? 1 : 0.3;
+        withAlpha(focus, () => {
+          panel(x, 96, 560, 450, title);
+          const pl = new Plot(x + 20, 136, 520, 390, [-1.05, 1.05], [-2, 2]);
+          pl.axes();
+          const fits = BVFIT[d].slice(0, 20);
+          fits.slice(0, count).forEach(c => pl.fn(x => polyval(c, x), { color: C.hit, width: 1.5, alpha: 0.55, n: 120 }));
+          pl.fn(truef, { color: C.dim, width: 2.5, dash: [6, 6] });
+          if (p >= 3 + side) withAlpha(fade(p, 3 + side), () => pl.fn(x => mean(fits.map(c => polyval(c, x))), { color: C.ink, width: 3, dash: [10, 6] }));
+        });
+        const tag = side ? '低偏差 · 高方差' : '高偏差 · 低方差';
+        withAlpha(fade(p, 3 + side), () => txt(tag, x + 280, 582, { size: 21, weight: 700, align: 'center', color: side ? C.warm : C.evict }));
+      });
+    });
+
+    // bias² + variance per degree
+    withAlpha(fade(p, 5, 0.15), () => {
+      panel(50, 90, 720, 506, '偏差² 与方差 vs 阶数（30 份数据集）');
+      const bp = new Plot(110, 140, 630, 390, [-0.6, 9.6], [0, 0.25]);
+      bp.axes();
+      [0.1, 0.2].forEach(v => txt(v.toFixed(1), 102, bp.Y(v) + 5, { size: 13, color: C.dim, align: 'right', mono: true }));
+      const g = ease(seg(p, 5) * 1.5);
+      BVSTAT.forEach(({ bias2, variance }, d) => {
+        const x = bp.X(d) - 20, b2 = Math.min(bias2, 0.24) * g, v = Math.min(variance, 0.24 - b2) * g;
+        box(x, bp.Y(b2), 40, bp.Y(0) - bp.Y(b2), C.evict, 3);
+        box(x, bp.Y(b2 + v), 40, bp.Y(b2) - bp.Y(b2 + v), C.warm, 3);
+        if (bias2 > 0.24) txt(`↑${bias2.toFixed(2)}`, x + 20, bp.y - 6, { size: 13, color: C.evict, align: 'center', mono: true });
+        txt(String(d), bp.X(d), 552, { size: 14, color: C.dim, align: 'center', mono: true });
+      });
+      legend([[C.evict, '偏差²'], [C.warm, '方差']], 520, 172);
+      txt('多项式阶数', 425, 578, { size: 15, color: C.dim, align: 'center' });
+
+      panel(790, 90, 440, 506);
+      rows(['MSE = E[(θ̂ − θ)²]', '    = Bias(θ̂)² + Var(θ̂)'], 816, 150, 40, { size: 21, mono: true });
+      rows(['容量 ↑ ⇒ 偏差 ↓，方差 ↑', '两者之和 ⇒ U 形测试误差', '', '降方差：更多数据、正则化', '降偏差：更大容量的模型'], 816, 260, 40, { size: 19, color: C.dim });
+    });
+  },
+},
+// ------------------------------------------------------------------ 6
+{
+  title: '最大似然估计', sec: '§5.5',
+  caps: [
+    '前面的 MSE 是从哪里来的？最常用的原则是最大似然估计（MLE）：选让观测数据出现概率最大的参数。',
+    '假设数据来自高斯分布 N(μ, 1)。移动 μ，每个数据点的概率密度（竖线）都在变，下面画出对数似然。',
+    '对数似然在样本均值处达到最大，所以高斯分布均值的 MLE 就是样本均值。取对数把连乘变成求和，计算更稳定。',
+    '最大化似然，等价于让模型分布逼近数据的经验分布，也就是最小化 KL 散度，也就是最小化交叉熵。',
+    '如果假设 y 等于预测值加高斯噪声，最大化条件似然恰好就是最小化 MSE。所以线性回归用 MSE 是有道理的。',
+    'MLE 还有两个好性质：一致性（数据无穷多时收敛到真值）和统计效率高。这就是深度学习默认用它的原因。',
+  ],
+  draw(p) {
+    const mu = p < 1 ? -1.5 : p < 2 ? lerp(-1.5, 3.5, ease(seg(p, 1))) : p < 3 ? lerp(3.5, MX_BAR, ease(seg(p, 2))) : MX_BAR;
+    const pdf = x => Math.exp(-0.5 * (x - mu) ** 2) / Math.sqrt(2 * Math.PI);
+
+    panel(50, 84, 760, 262, '数据与模型分布 N(μ, 1)');
+    const tp = new Plot(80, 120, 700, 196, [-3, 5], [0, 0.45]);
+    tp.axes({ xl: 'x' });
+    tp.fn(pdf, { color: C.hit, width: 3 });
+    MX.forEach(x => line(tp.X(x), tp.Y(0), tp.X(x), tp.Y(pdf(x)), C.warm, 2.5));
+    tp.dots(MX, MX.map(() => 0), { color: C.accent, r: 6 });
+    txt(`μ = ${mu.toFixed(2)}`, tp.X(mu), 140, { size: 18, mono: true, align: 'center', color: C.hit });
+
+    panel(50, 358, 760, 238, '对数似然 log L(μ)');
+    const lo = logLik(-1.5), hi = logLik(MX_BAR);
+    const bp = new Plot(80, 396, 700, 170, [-3, 5], [lo - 2, hi + 3]);
+    bp.axes({ xl: 'μ' });
+    if (p >= 1) {
+      const to = p < 2 ? mu : 3.5;
+      bp.fn(logLik, { color: C.violet, width: 3, from: -1.5, to: Math.max(-1.49, to) });
+      dot(bp.X(mu), bp.Y(logLik(mu)), 7, C.violet);
+    }
+    withAlpha(ease((p - 2.7) / 0.2), () => {
+      line(bp.X(MX_BAR), bp.y, bp.X(MX_BAR), bp.y + bp.h, C.hit, 2, [5, 5]);
+      txt(`样本均值 x̄ = ${MX_BAR.toFixed(2)}`, bp.X(MX_BAR) + 10, bp.y + 22, { size: 16, color: C.hit });
+    });
+
+    panel(830, 84, 400, 512);
+    const groups = [
+      [0, '似然', ['L(μ) = Π p(xᵢ; μ)', 'log L = Σ log p(xᵢ; μ)', `当前 log L = ${logLik(mu).toFixed(2)}`]],
+      [3, '⇔ KL / 交叉熵', ['θ_ML = argmax Σ log p(xᵢ;θ)', '  = argmin KL(p̂_data ‖ p_model)', '  = argmin −E[log p_model]']],
+      [4, '⇔ MSE', ['p(y|x) = N(y; ŷ(x), σ²)', '−log p = (y−ŷ)²/2σ² + 常数', '⇒ 最大似然 ⇔ 最小 MSE']],
+      [5, '好性质', ['一致性：m → ∞ 时 θ̂ → θ', '统计效率：大样本下方差最小']],
+    ];
+    groups.forEach(([at, head, body], gi) => withAlpha(fade(p, at) * (p >= at + 1 || gi === 3 || p < (groups[gi + 1]?.[0] ?? 9) ? 1 : 0.55), () => {
+      const y = 122 + gi * 122;
+      txt(head, 852, y, { size: 18, weight: 700, color: [C.violet, C.accent, C.warm, C.hit][gi] });
+      rows(body, 852, y + 30, 28, { size: 15.5, mono: true });
+    }));
+  },
+},
+// ------------------------------------------------------------------ 7
+{
+  title: '贝叶斯统计与 MAP', sec: '§5.6',
+  caps: [
+    '频率派把 θ 看成固定但未知的数；贝叶斯派把 θ 本身看成随机变量，用概率分布表示我们对它的不确定性。',
+    '先验 p(θ) 是看数据之前的信念，似然 p(x|θ) 是数据给出的证据。后验正比于似然乘以先验。',
+    '数据越多，似然越尖，后验越来越被数据主导，最后和 MLE 几乎重合。',
+    '数据少的时候差别明显：MAP 取后验的峰值，被先验拉向 0；MLE 只看数据。',
+    '关键联系：如果先验是均值为 0 的高斯分布，log 先验就是 −wᵀw 再乘一个常数。所以 MAP 估计正好等价于权重衰减。',
+  ],
+  draw(p) {
+    const n = p < 1 ? 0 : p < 2 ? 1
+      : p < 3 ? Math.round(Math.exp(lerp(0, Math.log(60), ease(seg(p, 2)))))
+      : p < 4 ? Math.round(Math.exp(lerp(Math.log(60), Math.log(3), ease(seg(p, 3) * 2)))) : 3;
+    const xbar = n ? mean(BX.slice(0, n)) : 0;
+    const postMu = n * xbar / (1 + n), postSd = Math.sqrt(1 / (1 + n));
+    const bump = (m, s) => th => Math.exp(-0.5 * ((th - m) / s) ** 2);
+
+    panel(50, 84, 780, 512, 'θ 的分布（各自缩放到同一高度）');
+    const pl = new Plot(80, 130, 720, 400, [-3, 4], [0, 1.15]);
+    pl.axes({ xl: 'θ' });
+    withAlpha(fade(p, 0), () => pl.fn(bump(0, 1), { color: C.violet, width: 3 }));
+    if (n) {
+      withAlpha(fade(p, 1, 0.2), () => pl.fn(bump(xbar, 1 / Math.sqrt(n)), { color: C.accent, width: 3 }));
+      withAlpha(ease((p - 1.4) / 0.2), () => pl.fn(bump(postMu, postSd), { color: C.hit, width: 4 }));
+      BX.slice(0, n).forEach(x => line(pl.X(x), pl.Y(0), pl.X(x), pl.Y(0.07), C.warm, 2));
+    }
+    withAlpha(fade(p, 3), () => {
+      line(pl.X(xbar), pl.y, pl.X(xbar), pl.Y(0), C.accent, 2, [6, 5]);
+      line(pl.X(postMu), pl.y, pl.X(postMu), pl.Y(0), C.hit, 2.5);
+      txt('MLE', pl.X(xbar) + 6, pl.y + 18, { size: 16, color: C.accent, weight: 700 });
+      txt('MAP', pl.X(postMu) - 6, pl.y + 18, { size: 16, color: C.hit, weight: 700, align: 'right' });
+    });
+    txt('真值 θ = 1.5；数据 x ~ N(θ, 1)', 80, 584, { size: 15, color: C.dim });
+
+    panel(850, 84, 380, 512);
+    const items = [[C.violet, '先验 p(θ) = N(0, 1)', 0], [C.accent, '似然 p(x | θ)', 1], [C.hit, '后验 p(θ | x)', 1.4]];
+    items.forEach(([col, lab, at], i) => withAlpha(ease((p - at) / 0.2), () => {
+      line(874, 128 + i * 36, 904, 128 + i * 36, col, 4);
+      txt(lab, 916, 134 + i * 36, { size: 17 });
+    }));
+    withAlpha(fade(p, 1), () => {
+      txt('p(θ|x) ∝ p(x|θ) · p(θ)', 874, 260, { size: 19, mono: true });
+      txt(`n = ${n}`, 874, 310, { size: 26, mono: true, weight: 700, color: C.warm });
+      txt(`MLE = x̄ = ${xbar.toFixed(2)}`, 874, 350, { size: 17, mono: true, color: C.accent });
+      txt(`MAP = ${postMu.toFixed(2)}`, 874, 380, { size: 17, mono: true, color: C.hit });
+    });
+    withAlpha(fade(p, 4), () => {
+      box(866, 404, 348, 176, 'rgba(232,176,75,0.12)', 10);
+      rows(['log p(w|x) = log p(x|w) + log p(w)', 'p(w) = N(0, σ²I)', '⇒ log p(w) = −wᵀw/2σ² + 常数', '⇒ MAP = 最小化 MSE + λ‖w‖²'], 880, 436, 36, { size: 15.5, mono: true });
+    });
+  },
+},
+// ------------------------------------------------------------------ 8
+{
+  title: '监督学习', sec: '§5.7',
+  caps: [
+    '监督学习是根据 (x, y) 学习 p(y|x)。二分类时用逻辑回归：用 sigmoid 函数把 wᵀx + b 压到 0 到 1 之间，当作概率。',
+    '训练目标是最小化负对数似然，也就是交叉熵。梯度下降一步步把决策边界转到正确的位置。',
+    '换一份环形数据，线性边界就无能为力了。k 近邻和决策树能画出弯曲的边界；SVM 靠核技巧隐式映射到高维空间。',
+    '这些方法的问题是：核方法的计算量随样本数快速增长，相似度要靠人设计，而且维度一高就失效。这正是深度学习要解决的。',
+  ],
+  draw(p) {
+    withAlpha(1 - fade(p, 2, 0.15), () => {
+      const s = p < 1 ? 0 : ease((p - 1) / 0.9) * (LOGI.length - 1);
+      const i0 = Math.floor(s), i1 = Math.min(LOGI.length - 1, i0 + 1), f = s - i0;
+      const a = lerp(LOGI[i0].a, LOGI[i1].a, f), b = lerp(LOGI[i0].b, LOGI[i1].b, f), c = lerp(LOGI[i0].c, LOGI[i1].c, f);
+      const prob = (x, y) => sigmoid(a * x + b * y + c);
+
+      panel(50, 84, 680, 512, '逻辑回归');
+      const pl = new Plot(70, 120, 640, 440, [-2.8, 2.8], [-2, 2]);
+      pl.shade(prob);
+      pl.axes();
+      pl.fn(x => -(a * x + c) / b, { color: C.ink, width: 3 });
+      BLOBS.forEach(([x, y, k]) => dot(pl.X(x), pl.Y(y), 6, k ? C.accent : C.evict));
+      txt(`第 ${Math.round(s)} 步   训练准确率 ${(accOf(BLOBS, prob) * 100).toFixed(0)}%`, 70, 584, { size: 16, mono: true, color: C.dim });
+
+      panel(760, 84, 470, 250, 'sigmoid：把实数压成概率');
+      const sp = new Plot(790, 124, 410, 160, [-6, 6], [-0.05, 1.05]);
+      sp.axes({ xl: 'z' });
+      sp.fn(sigmoid, { color: C.violet, width: 3 });
+      txt('p(y=1 | x) = σ(wᵀx + b),  σ(z) = 1/(1+e⁻ᶻ)', 790, 318, { size: 15, mono: true });
+
+      withAlpha(fade(p, 1), () => {
+        panel(760, 346, 470, 250, '交叉熵损失（负对数似然）');
+        const lp = new Plot(790, 390, 410, 160, [0, LOGI.length - 1], [0, LOGI[0].loss * 1.05]);
+        lp.axes({ xl: '迭代步' });
+        lp.poly(LOGI.slice(0, i0 + 1).map((g, k) => [k, g.loss]), { color: C.warm, width: 3 });
+        txt(`loss = ${LOGI[i0].loss.toFixed(3)}`, 790, 580, { size: 16, mono: true, color: C.dim });
+      });
+    });
+
+    withAlpha(fade(p, 2, 0.15), () => {
+      const models = [
+        ['逻辑回归（线性边界）', (x, y) => ringLR(x, y)],
+        ['k 近邻（k = 5）', (x, y, i, j) => KNN_GRID[i * RING_N + j]],
+        ['决策树（深度 4）', (x, y) => treeProb(x, y)],
+      ];
+      models.forEach(([title, prob], m) => {
+        const x = 50 + m * 400;
+        panel(x, 84, 380, 450, title);
+        const pl = new Plot(x + 20, 118, 340, 340, [-RING_R, RING_R], [-RING_R, RING_R]);
+        pl.shade(prob, RING_N, RING_N);
+        RING.forEach(([u, v, k]) => dot(pl.X(u), pl.Y(v), 4, k ? C.accent : C.evict));
+        txt(`训练准确率 ${(RING_ACC[m] * 100).toFixed(0)}%`, x + 190, 506, { size: 19, mono: true, align: 'center', color: m ? C.hit : C.evict });
+      });
+      withAlpha(fade(p, 3), () => {
+        box(50, 548, 1180, 50, 'rgba(232,176,75,0.12)', 10);
+        txt('局限：核矩阵 O(m²) · 相似度靠手工设计 · 高维下“近邻”失去意义（见 §5.11）', W / 2, 580, { size: 19, color: C.warm, align: 'center' });
+      });
+    });
+  },
+},
+// ------------------------------------------------------------------ 9
+{
+  title: '无监督学习', sec: '§5.8',
+  caps: [
+    '无监督学习只有 x，没有标签。目标是找到数据更好的表示：维度更低、更稀疏，或者各分量更独立。',
+    'PCA 找方差最大的方向，把数据投影上去，得到一个线性的低维表示，而且各分量互不相关。',
+    'k-means 先随机放 k 个中心，然后反复做两步：把每个点分给最近的中心，再把中心移到它那一簇的均值。',
+    'k-means 得到的是 one-hot 表示，每个点只属于一个簇。深度学习更喜欢分布式表示：每一维都携带一部分信息。',
+  ],
+  draw(p) {
+    panel(50, 84, 580, 512, 'PCA（主成分分析）');
+    const pp = new Plot(70, 120, 540, 440, [-3, 3], [-2.44, 2.44]);
+    pp.axes();
+    const proj = ease((seg(p, 1) - 0.45) / 0.4);
+    PCA_PTS.forEach(([x, y]) => {
+      const t = (x - PCA.mx) * PCA.d1[0] + (y - PCA.my) * PCA.d1[1];
+      const px = PCA.mx + t * PCA.d1[0], py = PCA.my + t * PCA.d1[1];
+      dot(pp.X(lerp(x, px, proj)), pp.Y(lerp(y, py, proj)), 4, C.accent);
+    });
+    withAlpha(fade(p, 1, 0.2), () => {
+      const L1 = 2 * Math.sqrt(PCA.l1), L2 = 2 * Math.sqrt(PCA.l2);
+      arrow(pp.X(PCA.mx), pp.Y(PCA.my), pp.X(PCA.mx + L1 * PCA.d1[0]), pp.Y(PCA.my + L1 * PCA.d1[1]), C.warm, 3.5);
+      arrow(pp.X(PCA.mx), pp.Y(PCA.my), pp.X(PCA.mx + L2 * PCA.d2[0]), pp.Y(PCA.my + L2 * PCA.d2[1]), C.violet, 3.5);
+      txt(`PC1 方差 ${PCA.l1.toFixed(2)}`, 80, 584, { size: 16, color: C.warm, mono: true });
+      txt(`PC2 方差 ${PCA.l2.toFixed(2)}`, 300, 584, { size: 16, color: C.violet, mono: true });
+    });
+    withAlpha(1 - fade(p, 1), () => txt('无标签的二维数据', 340, 150, { size: 18, color: C.dim, align: 'center' }));
+
+    withAlpha(p < 2 ? 0.35 : 1, () => {
+      panel(650, 84, 580, 512, 'k-means 聚类（k = 3）');
+      const kp = new Plot(670, 120, 540, 440, [-3, 3], [-2.44, 2.44]);
+      kp.axes();
+      let cents = KM_C[0], assign = null, label = '初始：随机放 3 个中心';
+      if (p >= 2) {
+        const q = Math.min(seg(p, 2) * 2 * KM_T, 2 * KM_T - 1e-6);
+        const r = Math.floor(q / 2) + 1, ph = q - 2 * (r - 1);
+        assign = KM_A[r];
+        cents = ph < 1 ? KM_C[r - 1] : KM_C[r - 1].map((c, k) => [lerp(c[0], KM_C[r][k][0], ease(ph - 1)), lerp(c[1], KM_C[r][k][1], ease(ph - 1))]);
+        label = `第 ${r} 轮：${ph < 1 ? '① 分配到最近中心' : '② 中心移到簇均值'}`;
+        if (p >= 3) label = `收敛（共 ${KM_T} 轮）`;
+      }
+      KM_PTS.forEach(([x, y], i) => dot(kp.X(x), kp.Y(y), 4, assign ? KM_COL[assign[i]] : C.dim));
+      if (p >= 2) cents.forEach(([x, y], k) => {
+        dot(kp.X(x), kp.Y(y), 11, C.bg);
+        txt('✕', kp.X(x), kp.Y(y) + 8, { size: 24, weight: 700, color: KM_COL[k], align: 'center' });
+      });
+      txt(label, 680, 584, { size: 16, color: C.dim });
+      withAlpha(fade(p, 3), () => {
+        box(680, 128, 520, 96, 'rgba(15,17,21,0.85)', 10);
+        txt('one-hot：  簇 2 → [0, 1, 0]', 700, 166, { size: 17, mono: true, color: C.warm });
+        txt('分布式：  [0.7, −1.2, 0.3, …] 每维都有信息', 700, 204, { size: 17, mono: true, color: C.hit });
+      });
+    });
+  },
+},
+// ------------------------------------------------------------------ 10
+{
+  title: '随机梯度下降', sec: '§5.9',
+  caps: [
+    '几乎所有深度学习都靠同一个优化算法：随机梯度下降（SGD）。图上是损失函数的等高线，中心是最小值。',
+    '全批量梯度下降每走一步都要算全部 m 个样本的梯度。路径很平滑，但 m 上亿时，一步都走不起。',
+    'SGD 每步只随机取一小批样本（minibatch，几十到几百个）来估计梯度。路径有噪声，但大方向是对的。',
+    '关键在于每步的成本和训练集大小 m 无关。数据再多，更新一次也一样便宜，所以才能在海量数据上训练大模型。',
+  ],
+  draw(p) {
+    panel(50, 84, 720, 512, '损失 L(θ) 等高线');
+    const pl = new Plot(70, 116, 680, 460, [-3, 3], [-2.03, 2.03]);
+    pl.clip(() => {
+      for (const L of [0.1, 0.4, 1, 2, 4, 7, 11, 16]) {
+        const pts = range(121, i => { const t = i / 120 * 2 * Math.PI; return fromU([Math.sqrt(2 * L) * Math.cos(t), Math.sqrt(2 * L / KAPPA) * Math.sin(t)]); });
+        pl.poly(pts, { color: C.line, width: 1.5 });
+      }
+    });
+    dot(pl.X(0), pl.Y(0), 6, C.ink);
+    dot(pl.X(START[0]), pl.Y(START[1]), 7, C.dim);
+    txt('起点', pl.X(START[0]) - 10, pl.Y(START[1]) - 14, { size: 15, color: C.dim });
+    const kG = p < 1 ? 0 : Math.ceil(ease(seg(p, 1)) * (GD_PATH.length - 1));
+    const kS = p < 2 ? 0 : Math.ceil(ease(seg(p, 2)) * (SGD_PATH.length - 1));
+    if (kG) {
+      pl.poly(GD_PATH.slice(0, kG + 1), { color: C.accent, width: 3 });
+      GD_PATH.slice(1, kG + 1).forEach(([x, y]) => dot(pl.X(x), pl.Y(y), 3.5, C.accent));
+    }
+    if (kS) {
+      pl.poly(SGD_PATH.slice(0, kS + 1), { color: C.warm, width: 2.5 });
+      SGD_PATH.slice(1, kS + 1).forEach(([x, y]) => dot(pl.X(x), pl.Y(y), 3, C.warm));
+    }
+    legend([[C.accent, '全批量 GD'], [C.warm, 'SGD（minibatch）']], 80, 584);
+
+    const fmt = v => v.toLocaleString('en-US');
+    withAlpha(fade(p, 1), () => {
+      panel(790, 84, 440, 200, null, C.accent);
+      txt('全批量梯度下降', 812, 120, { size: 20, weight: 700, color: C.accent });
+      txt('g = (1/m) Σᵢ ∇L(xᵢ, yᵢ; θ)', 812, 156, { size: 16, mono: true });
+      txt('每步：全部 m = 1,000,000 个样本', 812, 192, { size: 16, color: C.dim });
+      txt(`已算梯度：${kG} × m = ${fmt(kG * 1e6)}`, 812, 250, { size: 16, mono: true });
+    });
+    withAlpha(fade(p, 2), () => {
+      panel(790, 296, 440, 200, null, C.warm);
+      txt('SGD（minibatch）', 812, 332, { size: 20, weight: 700, color: C.warm });
+      txt('g ≈ (1/B) Σ_{i∈batch} ∇L(xᵢ, yᵢ; θ)', 812, 368, { size: 16, mono: true });
+      txt('每步：随机 B = 128 个样本', 812, 404, { size: 16, color: C.dim });
+      txt(`已算梯度：${kS} × B = ${fmt(kS * 128)}`, 812, 462, { size: 16, mono: true });
+    });
+    withAlpha(fade(p, 3), () => {
+      box(790, 508, 440, 88, 'rgba(75,191,135,0.14)', 12);
+      txt('每步成本：GD O(m)，SGD O(B)', 1010, 542, { size: 19, weight: 700, color: C.hit, align: 'center' });
+      txt(`GD 走 1 步 ≈ SGD 走 ${fmt(Math.round(1e6 / 128))} 步的计算量`, 1010, 576, { size: 16, color: C.dim, align: 'center' });
+    });
+  },
+},
+// ------------------------------------------------------------------ 11
+{
+  title: '构建机器学习算法的配方', sec: '§5.10',
+  caps: [
+    '这一章其实给出了一个通用配方。几乎所有深度学习算法，都由这四样东西组合而成：',
+    '数据集，加上代价函数，加上优化算法，再加上模型。',
+    '比如线性回归：数据是 (X, y)，代价是 MSE（就是高斯噪声下的 MLE），优化可以用正规方程或 SGD，模型是线性函数。',
+    '把模型换成深层神经网络，代价换成交叉熵，优化换成 minibatch SGD 加反向传播，就是后面几章的内容。',
+  ],
+  draw(p) {
+    const parts = [
+      ['数据集', 'Dataset', C.accent, '(X, y)', '海量 (x, y)', '§5.3 划分数据'],
+      ['代价函数', 'Cost', C.warm, 'MSE\n= 高斯 MLE', '交叉熵 (NLL)\n+ 正则化', '第 7 章 正则化'],
+      ['优化算法', 'Optimizer', C.hit, '正规方程\n或 SGD', 'minibatch SGD\n+ 反向传播', '第 8 章 优化'],
+      ['模型', 'Model', C.violet, 'ŷ = wᵀx + b', '深层神经网络', '第 6 章 前馈网络'],
+    ];
+    const bw = 250, gap = 50, x0 = (W - (4 * bw + 3 * gap)) / 2, y = 200, h = 250;
+    withAlpha(fade(p, 2) * (1 - fade(p, 3)), () => txt('例：线性回归', W / 2, 160, { size: 24, weight: 700, align: 'center' }));
+    withAlpha(fade(p, 3), () => txt('深度学习', W / 2, 160, { size: 24, weight: 700, align: 'center', color: C.hit }));
+    parts.forEach(([zh, en, col, lr, dl, ch], i) => {
+      const x = x0 + i * (bw + gap);
+      withAlpha(ease((p - i * 0.22) / 0.2), () => {
+        panel(x, y, bw, h, null, col);
+        txt(zh, x + bw / 2, y + 48, { size: 26, weight: 700, align: 'center', color: col });
+        txt(en, x + bw / 2, y + 78, { size: 15, align: 'center', color: C.dim });
+        withAlpha(fade(p, 2) * (1 - fade(p, 3)), () => rows(lr.split('\n'), x + bw / 2, y + 150, 34, { size: 20, mono: true, align: 'center' }));
+        withAlpha(fade(p, 3), () => {
+          rows(dl.split('\n'), x + bw / 2, y + 150, 34, { size: 19, mono: true, align: 'center' });
+          txt(ch, x + bw / 2, y + h + 34, { size: 16, align: 'center', color: C.dim });
+        });
+      });
+      if (i < 3) withAlpha(fade(p, 1), () => txt('+', x + bw + gap / 2, y + h / 2 + 14, { size: 40, weight: 700, align: 'center', color: C.dim }));
+    });
+    withAlpha(fade(p, 1) * (1 - fade(p, 2)), () => txt('几乎所有深度学习算法 = 这四样的不同组合', W / 2, 540, { size: 22, align: 'center', color: C.dim }));
+  },
+},
+// ------------------------------------------------------------------ 12
+{
+  title: '为什么需要深度学习', sec: '§5.11',
+  caps: [
+    '传统机器学习在图像、语音、语言这类任务上为什么不够用？因为输入的维度非常高。',
+    '维度灾难：每个维度切 10 格，1 维是 10 格，2 维 100 格，3 维 1000 格，d 维就是 10 的 d 次方格。同样 20 个样本，很快就填不满了。',
+    '传统方法大多依赖平滑性先验：相近的输入，输出也相近。只靠这一条，在没有样本的区域什么也学不到。',
+    '流形假设：真实数据集中在高维空间里的低维流形上。沿着流形展开，结构就简单了。深度学习学的正是这种表示。',
+  ],
+  draw(p) {
+    // high-dimensional inputs
+    withAlpha(1 - fade(p, 1, 0.15), () => {
+      [['图像', '224 × 224 × 3', '= 150,528 维'], ['语音', '16 kHz × 1 秒', '= 16,000 维'], ['文本', '20 个词，词表 5 万', '= 50000²⁰ 种组合']].forEach(([a, b, c], i) => {
+        const x = 110 + i * 370;
+        panel(x, 160, 320, 240);
+        txt(a, x + 160, 230, { size: 34, weight: 700, align: 'center', color: [C.accent, C.warm, C.hit][i] });
+        txt(b, x + 160, 300, { size: 20, mono: true, align: 'center' });
+        txt(c, x + 160, 345, { size: 20, mono: true, align: 'center', color: C.dim });
+      });
+      txt('输入维度极高 → 传统方法依赖的假设开始失效', W / 2, 480, { size: 22, align: 'center', color: C.dim });
+    });
+
+    // curse of dimensionality
+    withAlpha(fade(p, 1, 0.15) * (1 - fade(p, 2, 0.15)), () => {
+      const s1 = seg(p, 1);
+      const show = i => ease((s1 - i * 0.28) / 0.12);
+      withAlpha(show(0), () => {
+        panel(50, 90, 380, 460, '1 维：10 格');
+        for (let i = 0; i <= 10; i++) line(80 + i * 32, 300, 80 + i * 32, 340, C.line, 1.5);
+        line(80, 340, 400, 340, C.line, 1.5);
+        CUBE.forEach(q => dot(80 + q[0] * 320, 320, 5, C.warm));
+        txt(`${OCC[0]} / 10 格有样本`, 240, 500, { size: 22, mono: true, align: 'center', color: C.hit });
+      });
+      withAlpha(show(1), () => {
+        panel(450, 90, 380, 460, '2 维：100 格');
+        for (let i = 0; i <= 10; i++) { line(490 + i * 30, 160, 490 + i * 30, 460, C.line, 1); line(490, 160 + i * 30, 790, 160 + i * 30, C.line, 1); }
+        CUBE.forEach(q => dot(490 + q[0] * 300, 460 - q[1] * 300, 5, C.warm));
+        txt(`${OCC[1]} / 100 格有样本`, 640, 500, { size: 22, mono: true, align: 'center', color: C.warm });
+      });
+      withAlpha(show(2), () => {
+        panel(850, 90, 380, 460, '3 维：1000 格');
+        const s = 160, ox = 1040, oy = 170, c30 = Math.cos(Math.PI / 6);
+        const P = (x, y, z) => [ox + (x - z) * c30 * s, oy + (1 - y) * s + (x + z) * 0.5 * s];
+        for (let i = 0; i <= 10; i++) {
+          const t = i / 10;
+          [[P(t, 0, 0), P(t, 0, 1)], [P(0, 0, t), P(1, 0, t)], [P(t, 0, 0), P(t, 1, 0)], [P(0, t, 0), P(1, t, 0)], [P(0, t, 0), P(0, t, 1)], [P(0, 0, t), P(0, 1, t)]]
+            .forEach(([a, b]) => line(a[0], a[1], b[0], b[1], 'rgba(147,154,171,0.28)', 1));
+        }
+        CUBE.forEach(q => { const [x, y] = P(q[0], q[1], q[2]); dot(x, y, 4.5, C.warm); });
+        txt(`${OCC[2]} / 1000 格有样本`, 1040, 500, { size: 22, mono: true, align: 'center', color: C.evict });
+      });
+      withAlpha(ease((s1 - 0.85) / 0.1), () => txt('d 维：10ᵈ 格，同样 20 个样本', W / 2, 584, { size: 20, align: 'center', weight: 700 }));
+    });
+
+    // smoothness prior
+    withAlpha(fade(p, 2, 0.15) * (1 - fade(p, 3, 0.15)), () => {
+      panel(50, 90, 1180, 506, '平滑性（局部不变性）先验');
+      const pl = new Plot(90, 140, 1100, 380, [0, 10], [-1.7, 1.7]);
+      box(pl.X(3.5), pl.y, pl.X(7) - pl.X(3.5), pl.h, 'rgba(226,96,122,0.10)', 0);
+      txt('?', pl.X(5.25), pl.Y(0) + 30, { size: 90, weight: 700, align: 'center', color: C.evict, alpha: 0.6 });
+      pl.axes({ xl: 'x' });
+      pl.fn(smoothf, { color: C.dim, width: 2, dash: [6, 6] });
+      pl.fn(nn1, { color: C.hit, width: 3, n: 600 });
+      pl.dots(SMX, SMY, { color: C.accent });
+      legend([[C.accent, '训练样本'], [C.hit, '1-近邻预测（相近输入 → 相近输出）'], [C.dim, '真实函数', 'line']], 100, 570);
+    });
+
+    // manifold hypothesis
+    withAlpha(fade(p, 3, 0.15), () => {
+      panel(50, 90, 580, 506, '二维空间里的数据');
+      panel(650, 90, 580, 506, '沿流形展开：其实只有一维');
+      const pl = new Plot(80, 130, 520, 430, [-2.6, 2.6], [-2.15, 2.15]);
+      pl.fn(t => 0, { alpha: 0 });
+      const curve = range(200, i => { const t = 0.6 + (3 * Math.PI - 0.6) * i / 199; return [0.25 * t * Math.cos(t), 0.25 * t * Math.sin(t)]; });
+      pl.poly(curve, { color: C.line, width: 2 });
+      const u = ease((seg(p, 3) - 0.2) / 0.6);
+      const t0 = SPIRAL[0].t, t1 = SPIRAL[SPIRAL.length - 1].t;
+      SPIRAL.forEach(({ t, x, y, n }) => {
+        const hue = 200 + 140 * (t - t0) / (t1 - t0);
+        const sx = pl.X(x), sy = pl.Y(y);
+        const ux = lerp(690, 1190, (t - t0) / (t1 - t0)), uy = 350 + n * 14;
+        dot(lerp(sx, ux, u), lerp(sy, uy, u), 4, `hsl(${hue}, 70%, 65%)`);
+      });
+      withAlpha(u, () => line(690, 385, 1190, 385, C.line, 2));
+      txt('高维空间中的低维流形', 340, 584, { size: 17, color: C.dim, align: 'center' });
+      withAlpha(u, () => txt('坐标 t：一个数就能描述', 940, 430, { size: 18, color: C.dim, align: 'center' }));
+    });
+  },
+},
+// ------------------------------------------------------------------ 13
+{
+  title: '回顾', sec: '第 5 章',
+  caps: [
+    '回顾这一章的八个要点。面试里被问到“过拟合怎么办”“为什么用交叉熵”，答案都在这里。',
+    '下一步是第 6 章：深度前馈网络与反向传播，也就是把这里的“模型”换成神经网络。',
+  ],
+  draw(p) {
+    const pts = [
+      ['泛化', '目标是测试误差小，而不只是训练误差小'],
+      ['容量', '欠拟合 ↔ 过拟合，测试误差呈 U 形'],
+      ['正则化', 'weight decay = 高斯先验下的 MAP'],
+      ['偏差-方差', 'MSE = Bias² + Var'],
+      ['最大似然', 'MLE ⇔ 最小化交叉熵；高斯噪声 ⇔ MSE'],
+      ['验证集', '验证集挑超参数，测试集只用一次'],
+      ['SGD', '每步成本与数据量 m 无关'],
+      ['为何深度学习', '维度灾难 + 流形假设 → 学习表示'],
+    ];
+    const n = Math.ceil(clamp(p / 1.4, 0, 1) * pts.length);
+    pts.forEach(([k, v], i) => withAlpha(i < n ? 1 : 0, () => {
+      const y = 100 + i * 60;
+      panel(170, y, 940, 50);
+      txt(k, 196, y + 33, { size: 20, weight: 700, color: C.accent });
+      txt(v, 400, y + 33, { size: 20 });
+    }));
+  },
+},
+];
+
+// ===================================================================
+// captions
+// ===================================================================
+function wrap(s, maxW) {
+  const toks = s.match(/[\x21-\x7e]+|\s+|[^\x21-\x7e\s]/g) || [];
+  const out = [];
+  let cur = '';
+  for (const t of toks) {
+    if (ctx.measureText(cur + t).width > maxW && cur.trim()) { out.push(cur.trim()); cur = t.trim() ? t : ''; }
+    else cur += t;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+function drawCaption(s) {
+  ctx.save();
+  let size = 25, lines;
+  for (;;) {
+    ctx.font = `500 ${size}px ${FONT}`;
+    lines = wrap(s, 1130);
+    if (lines.length <= 2 || size <= 20) break;
+    size -= 1;
+  }
+  const lh = size * 1.45, h = lines.length * lh + 24, y0 = 706 - h;
+  box(40, y0, 1200, h, 'rgba(23,26,33,0.94)', 12);
+  ctx.fillStyle = C.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  lines.forEach((l, i) => ctx.fillText(l, W / 2, y0 + 12 + lh * (i + 0.5)));
+  ctx.restore();
+}
+
+// ===================================================================
+// player
+// ===================================================================
+const $ = id => document.getElementById(id);
+let S = 0, K = 0, t = 0, playing = false, speed = 1, narrate = false;
+let ttsDone = false, tDone = null, fracAtDone = 0, utter = null, zhVoice = null, last = performance.now();
+let recorder = null, chunks = [];
+
+const cap = () => SCENES[S].caps[K];
+function est(s) {
+  let w = 0;
+  for (const ch of s) w += /[㐀-鿿　-〿＀-￯]/.test(ch) ? 1 : 0.45;
+  return Math.max(3, w * 0.24 + 0.8);
+}
+function frac() {
+  const e = est(cap());
+  if (!narrate || !playing) return clamp(t / e, 0, 1);
+  if (tDone === null) return Math.min(t / e, 0.98);
+  return lerp(fracAtDone, 1, clamp((t - tDone) / 0.5, 0, 1));
+}
+
+const hasTTS = 'speechSynthesis' in window;
+function pickVoice() {
+  if (!hasTTS) return;
+  const vs = speechSynthesis.getVoices();
+  zhVoice = vs.find(v => /zh[-_]CN/i.test(v.lang) && /Tingting|Ting-Ting|婷婷/.test(v.name))
+    || vs.find(v => /zh[-_]CN/i.test(v.lang)) || vs.find(v => /^zh/i.test(v.lang)) || null;
+}
+if (hasTTS) { speechSynthesis.onvoiceschanged = pickVoice; pickVoice(); }
+const SPEAK = [[/⇔/g, '等价于'], [/⇒/g, '所以'], [/≈/g, '约等于'], [/∝/g, '正比于'], [/ᵀ/g, ' 转置 '], [/²/g, '平方'],
+  [/θ̂/g, 'theta hat'], [/θ/g, 'theta'], [/λ/g, 'lambda'], [/→/g, '，'], [/−/g, '减'], [/[·（）()]/g, ' ']];
+function speak() {
+  ttsDone = false; tDone = null;
+  if (!hasTTS) return;
+  speechSynthesis.cancel();
+  if (!narrate || !playing) return;
+  const u = new SpeechSynthesisUtterance(SPEAK.reduce((s, [re, r]) => s.replace(re, r), cap()));
+  u.lang = 'zh-CN'; if (zhVoice) u.voice = zhVoice; u.rate = speed;
+  u.onend = u.onerror = () => { if (u === utter) ttsDone = true; };
+  utter = u;
+  speechSynthesis.speak(u);
+}
+
+function go(s, k) {
+  S = clamp(s, 0, SCENES.length - 1);
+  K = clamp(k, 0, SCENES[S].caps.length - 1);
+  t = 0;
+  speak();
+  updateUI();
+}
+function advance() {
+  if (K + 1 < SCENES[S].caps.length) go(S, K + 1);
+  else if (S + 1 < SCENES.length) go(S + 1, 0);
+  else { t = est(cap()); setPlaying(false); stopRecording(); }
+}
+function back() {
+  if (K > 0) go(S, K - 1);
+  else if (S > 0) go(S - 1, SCENES[S - 1].caps.length - 1);
+}
+function setPlaying(on) {
+  playing = on;
+  if (on) { if (t >= est(cap())) t = 0; if (narrate) t = 0; speak(); }
+  else if (hasTTS) speechSynthesis.cancel();
+  updateUI();
+}
+
+function render() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  const sc = SCENES[S];
+  if (!sc.noHeader) {
+    txt(sc.title, 50, 60, { size: 28, weight: 700 });
+    txt(sc.sec, W - 50, 60, { size: 18, color: C.dim, align: 'right', mono: true });
+  }
+  ctx.save(); sc.draw(K + frac()); ctx.restore();
+  drawCaption(cap());
+  SCENES.forEach((_, i) => dot(W / 2 - (SCENES.length - 1) * 8 + i * 16, 22, i === S ? 4.5 : 3, i === S ? C.accent : C.line));
+}
+
+function tick(now) {
+  const dt = Math.min(0.1, (now - last) / 1000);
+  last = now;
+  if (playing) {
+    t += dt * speed;
+    const e = est(cap());
+    if (narrate) {
+      if (ttsDone && tDone === null) { tDone = t; fracAtDone = Math.min(t / e, 0.98); }
+      if (tDone !== null && t - tDone >= 0.5) advance();
+    } else if (t >= e) advance();
+  }
+  render();
+  updateProgress();
+  requestAnimationFrame(tick);
+}
+
+// ---------- UI ----------
+const FLAT = SCENES.flatMap((sc, s) => sc.caps.map((c, k) => ({ s, k, d: est(c) })));
+const TOTAL = FLAT.reduce((a, c) => a + c.d, 0);
+const mmss = v => `${Math.floor(v / 60)}:${String(Math.floor(v % 60)).padStart(2, '0')}`;
+function elapsed() {
+  let a = 0;
+  for (const c of FLAT) { if (c.s === S && c.k === K) return a + Math.min(t, c.d); a += c.d; }
+  return a;
+}
+function updateProgress() {
+  const e = elapsed();
+  $('fill').style.width = `${e / TOTAL * 100}%`;
+  $('time').textContent = `${mmss(e / speed)} / ${mmss(TOTAL / speed)}`;
+}
+function updateUI() {
+  $('play').textContent = playing ? '⏸ 暂停' : '▶ 播放';
+  $('rec').textContent = recorder ? '⏹ 停止录制' : '⏺ 录制 .webm';
+  $('rec').classList.toggle('on', !!recorder);
+  [...$('chapters').children].forEach((b, i) => b.classList.toggle('cur', i === S));
+}
+SCENES.forEach((sc, i) => {
+  const b = document.createElement('button');
+  b.textContent = `${i}. ${sc.title}`;
+  b.onclick = () => go(i, 0);
+  $('chapters').appendChild(b);
+});
+$('play').onclick = () => setPlaying(!playing);
+$('prev').onclick = () => go(S - 1, 0);
+$('next').onclick = () => go(S + 1, 0);
+$('speed').onchange = e => { speed = +e.target.value; speak(); };
+$('narrate').onchange = e => { narrate = e.target.checked; t = 0; speak(); };
+if (!hasTTS) $('narrate').disabled = true;
+$('bar').onclick = e => {
+  const r = e.currentTarget.getBoundingClientRect(), target = (e.clientX - r.left) / r.width * TOTAL;
+  let a = 0;
+  for (const c of FLAT) { if (a + c.d > target) { go(c.s, c.k); t = target - a; return; } a += c.d; }
+};
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+  if (e.key === ' ') { e.preventDefault(); setPlaying(!playing); }
+  else if (e.key === 'ArrowRight') go(S + 1, 0);
+  else if (e.key === 'ArrowLeft') go(S - 1, 0);
+  else if (e.key === '.') advance();
+  else if (e.key === ',') back();
+});
+
+// ---------- recording ----------
+function stopRecording() { if (recorder && recorder.state !== 'inactive') recorder.stop(); }
+$('rec').onclick = () => {
+  if (recorder) { setPlaying(false); stopRecording(); return; }
+  const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m));
+  recorder = new MediaRecorder(cv.captureStream(30), { mimeType: mime, videoBitsPerSecond: 8e6 });
+  chunks = [];
+  recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  recorder.onstop = () => {
+    const url = URL.createObjectURL(new Blob(chunks, { type: 'video/webm' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = 'dl_ch5_ml_basics.webm'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    recorder = null;
+    updateUI();
+  };
+  narrate = false; $('narrate').checked = false;
+  go(0, 0);
+  recorder.start(1000);
+  setPlaying(true);
+};
+
+// ---------- deep links + self-test ----------
+function selftest() {
+  const errs = [];
+  SCENES.forEach((sc, i) => {
+    for (let p = 0; p < sc.caps.length; p += 0.05) {
+      try { ctx.save(); sc.draw(p); ctx.restore(); }
+      catch (e) { ctx.restore(); errs.push(`scene ${i} p=${p.toFixed(2)}: ${e.message}`); break; }
+    }
+    sc.caps.forEach(c => drawCaption(c));
+  });
+  return errs;
+}
+const hash = new URLSearchParams(location.hash.slice(1));
+if (hash.has('selftest')) {
+  const errs = selftest();
+  $('err').textContent = errs.length ? errs.join('\n') : 'SELFTEST OK';
+  document.title = errs.length ? 'SELFTEST FAIL' : 'SELFTEST OK';
+}
+if (hash.has('s')) {
+  go(+hash.get('s'), +(hash.get('k') || 0));
+  t = (+hash.get('f') || 0) * est(cap());
+}
+window.addEventListener('error', e => { $('err').textContent += `\n${e.message} (line ${e.lineno})`; });
+updateUI();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

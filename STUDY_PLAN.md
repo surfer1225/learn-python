@@ -35,8 +35,8 @@ Structures · Backend Engineering · System Design · Modern AI Infrastructure.
 ## Phase 0 — Environment & tooling (1 day)
 - [x] Python 3.13 + VS Code + Git + virtualenv (`.venv/`)
 - [x] Project structure + auto-commit hook (`.claude/settings.local.json`)
-- [ ] `pip install black ruff pytest mypy pre-commit`
-- [ ] Add `pyproject.toml` (configure black/ruff/mypy) + `.pre-commit-config.yaml` so format+lint+type-check run on every commit
+- [ ] `pip install black flake8 pytest mypy pre-commit` (no ruff: Santa blocks its binary on this Mac; `pyfmt` is the Meta-supported formatter if you want import sorting too)
+- [ ] Add `pyproject.toml` (configure black/mypy) + `.flake8` + `.pre-commit-config.yaml` so format+lint+type-check run on every commit
 - [ ] `pytest` wired so `tests/` runs green (chess tests already pass)
 
 > Want this scaffolded? Say the word and I'll add `pyproject.toml`, pre-commit, and move the ad-hoc `__main__` self-checks into `tests/`.

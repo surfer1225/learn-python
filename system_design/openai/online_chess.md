@@ -6,6 +6,7 @@
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×9 · [Hello Interview](https://www.hellointerview.com/guides/openai/l5) staff #1 most asked · [Coditioning](https://www.coditioning.com/blog/16/openai-system-design-interview-questions) |
 | **Most recent report** | 2026-09-21 |
 | **ShowOffer video** (watch after your attempt) | [Design Online Chess](https://www.youtube.com/watch?v=A7ISCoZab2I) |
+| **Second-view videos** (other channels) | [湾区程序猿 — Online Chess Game](https://www.youtube.com/watch?v=_2My3vZTIAk) (Chinese; [blog version](https://pyemma.github.io/How-to-design-online-chess-game/)) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt

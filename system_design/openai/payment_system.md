@@ -6,6 +6,7 @@
 | **Reported by** | [PracHub](https://prachub.com/companies/openai/categories/system-design) ×17 · [Hello Interview](https://www.hellointerview.com/guides/openai/l5) top-5 (Staff) · [Coditioning](https://www.coditioning.com/blog/16/openai-system-design-interview-questions) · [Interview Query](https://www.interviewquery.com/interview-guides/openai-software-engineer) |
 | **Most recent report** | 2026-09-28 |
 | **ShowOffer video** (watch after your attempt) | [Design Payment System](https://www.youtube.com/watch?v=ruxGKk51aHo) · pattern: [Payment Systems with Strong Consistency](https://www.youtube.com/watch?v=8v_Sv3bHNxE) |
+| **Second-view videos** (other channels) | [TechPrep — Design Stripe](https://www.youtube.com/watch?v=djc2vfpCvso) |
 | **Template** | [TEMPLATE.md](../TEMPLATE.md) |
 
 ## Prompt
