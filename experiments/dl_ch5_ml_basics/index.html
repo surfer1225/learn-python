@@ -1233,7 +1233,6 @@ const SCENES = [
       panel(50, 90, 580, 506, '二维空间里的数据');
       panel(650, 90, 580, 506, '沿流形展开：其实只有一维');
       const pl = new Plot(80, 130, 520, 430, [-2.6, 2.6], [-2.15, 2.15]);
-      pl.fn(t => 0, { alpha: 0 });
       const curve = range(200, i => { const t = 0.6 + (3 * Math.PI - 0.6) * i / 199; return [0.25 * t * Math.cos(t), 0.25 * t * Math.sin(t)]; });
       pl.poly(curve, { color: C.line, width: 2 });
       const u = ease((seg(p, 3) - 0.2) / 0.6);
