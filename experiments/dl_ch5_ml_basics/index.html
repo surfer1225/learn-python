@@ -895,7 +895,8 @@ const SCENES = [
       [4, '⇔ MSE', ['p(y|x) = N(y; ŷ(x), σ²)', '−log p = (y−ŷ)²/2σ² + 常数', '⇒ 最大似然 ⇔ 最小 MSE']],
       [5, '好性质', ['一致性：m → ∞ 时 θ̂ → θ', '统计效率：大样本下方差最小']],
     ];
-    groups.forEach(([at, head, body], gi) => withAlpha(fade(p, at) * (p >= at + 1 || gi === 3 || p < (groups[gi + 1]?.[0] ?? 9) ? 1 : 0.55), () => {
+    // The group for the current caption is bright; earlier groups stay but dim.
+    groups.forEach(([at, head, body], gi) => withAlpha(fade(p, at) * (p < (groups[gi + 1]?.[0] ?? Infinity) ? 1 : 0.55), () => {
       const y = 122 + gi * 122;
       txt(head, 852, y, { size: 18, weight: 700, color: [C.violet, C.accent, C.warm, C.hit][gi] });
       rows(body, 852, y + 30, 28, { size: 15.5, mono: true });
