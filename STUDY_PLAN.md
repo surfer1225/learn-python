@@ -161,6 +161,9 @@ Backend building blocks behind AI apps.
 - `python experiments/lru_cache_visualization.py` — animated LRU (hash map + DLL) 🎬
 - `python experiments/doubly_linked_list_animation.py` — the DLL behind LRU 🎬
 - `python experiments/pi_simulation.py` — Monte Carlo vs. Leibniz π
+- `open experiments/dl_ch5_ml_basics/index.html` — Deep Learning book Ch 5 (ML basics)
+  as a narrated, captioned animation: capacity, weight decay, bias/variance, MLE, MAP,
+  SGD; can record itself to `.webm` 🎬
 
 ## Suggested weekly order
 Wk0 tooling · Wk1–2 Python · Wk3–5 Algorithms (+start light mocks Wk4) · Wk6–8 Production coding · Wk9–10 System design · Wk11 AI infra · Wk12 Mocks.
